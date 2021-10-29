@@ -7,10 +7,13 @@
 
 `mle-launcher` provides two core functionalities:
 
-- **`MLEJob`**: A single job.
-- **`MLEQueue`**: A queue of jobs.
+- **`MLEJob`**: Manage a single job.
+- **`MLEQueue`**: Manage a queue of jobs.
 
 
 ## Development & Milestones for Next Release
 
 You can run the test suite via `python -m pytest -vv tests/`. If you find a bug or are missing your favourite feature, feel free to contact me [@RobertTLange](https://twitter.com/RobertTLange) or create an issue :hugs:. Here are some features I want to implement for the next release:
+
+- [ ] Get rid of all `mle_config` pre-settings. Make them input to Job/Queue
+- [ ] Get rid of all requirements?!

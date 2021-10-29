@@ -32,7 +32,7 @@ git_tar = f"https://github.com/RobertTLange/mle-launcher/archive/v{verstr}.tar.g
 
 
 setup(
-    name="mle_monitor",
+    name="mle_launcher",
     version=verstr,
     author="Robert Tjarko Lange",
     author_email="robertlange0@gmail.com",
