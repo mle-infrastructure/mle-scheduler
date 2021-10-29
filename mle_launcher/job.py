@@ -22,9 +22,6 @@ from .manage.manage_job_gcp import (
     gcp_clean_up,
 )
 
-# Import cluster credentials - SGE or Slurm scheduling system
-from mle_toolbox import mle_config
-
 # Overview of implemented remote resources in addition to local processes
 cluster_resources = ["sge-cluster", "slurm-cluster"]
 cloud_resources = ["gcp-cloud"]
@@ -77,6 +74,9 @@ class MLEJob(object):
         experiment_dir: str = "experiments/",
         cmd_line_input: Union[None, dict] = None,
         extra_cmd_line_input: Union[None, dict] = None,
+        use_conda_virtual_env: bool = False,
+        use_venv_virtual_env: bool = False,
+        gcp_code_dir: Union[str, None] = None,
         logger_level: int = logging.WARNING,
     ):
         # Init job class with relevant info
@@ -98,6 +98,11 @@ class MLEJob(object):
             self.cmd_line_args = self.generate_extra_cmd_line_args(
                 self.cmd_line_args, extra_cmd_line_input.copy()
             )
+
+        # Virtual environment usage & GCS code directory
+        self.use_conda_virtual_env = use_conda_virtual_env
+        self.use_venv_virtual_env = use_venv_virtual_env
+        self.gcp_code_dir = gcp_code_dir
 
         # Instantiate/connect a logger
         self.logger = logging.getLogger(__name__)
@@ -212,11 +217,11 @@ class MLEJob(object):
 
     def schedule_local(self):
         """Schedules job locally on your machine."""
-        if mle_config.general.use_conda_virtual_env:
+        if self.use_conda_virtual_env:
             proc = local_submit_conda_job(
                 self.job_filename, self.cmd_line_args, self.job_arguments
             )
-        elif mle_config.general.use_venv_virtual_env:
+        elif self.use_venv_virtual_env:
             proc = local_submit_venv_job(
                 self.job_filename, self.cmd_line_args, self.job_arguments
             )
@@ -250,7 +255,7 @@ class MLEJob(object):
             # Send config file to remote machine - independent of code base!
             upload_local_dir_to_gcs(
                 local_path=self.config_filename,
-                gcs_path=os.path.join(mle_config.gcp.code_dir, self.config_filename),
+                gcs_path=os.path.join(self.gcp_code_dir, self.config_filename),
             )
 
             # Submit VM Creation + Startup exec

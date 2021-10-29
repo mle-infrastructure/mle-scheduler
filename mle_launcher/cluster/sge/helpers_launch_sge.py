@@ -1,4 +1,3 @@
-from mle_toolbox import mle_config
 from .startup_script_sge import sge_base_job_config, sge_job_exec
 
 
@@ -16,12 +15,7 @@ def sge_generate_startup_file(job_arguments: dict) -> str:
     if "exclude_nodes" in job_arguments:
         base_template += (
             "#$ -l hostname="
-            + "&".join(
-                (
-                    "!" + f"{x}" + mle_config.sge.info.node_extension
-                    for x in job_arguments["exclude_nodes"]
-                )
-            )
+            + "&".join(("!" + f"{x}" for x in job_arguments["exclude_nodes"]))
             + "\n"
         )
 
@@ -29,12 +23,7 @@ def sge_generate_startup_file(job_arguments: dict) -> str:
     if "include_nodes" in job_arguments:
         base_template += (
             "#$ -l hostname="
-            + "&".join(
-                (
-                    +f"{x}" + mle_config.sge.info.node_extension
-                    for x in job_arguments["include_nodes"]
-                )
-            )
+            + "&".join((+f"{x}" for x in job_arguments["include_nodes"]))
             + "\n"
         )
 

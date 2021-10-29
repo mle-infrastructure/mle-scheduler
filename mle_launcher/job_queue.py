@@ -8,9 +8,6 @@ from typing import List
 import numpy as np
 from .job import MLEJob
 
-# Import the MLE-Toolbox configuration
-from mle_toolbox import mle_config
-
 
 class MLEQueue(object):
     """
@@ -29,7 +26,12 @@ class MLEQueue(object):
         default_seed: int = 0,
         random_seeds: Union[None, List[int]] = None,
         max_running_jobs: int = 10,
-        message_id: Union[str, None] = None,
+        use_conda_virtual_env: bool = False,
+        use_venv_virtual_env: bool = False,
+        gcp_code_dir: Union[str, None] = None,
+        slack_message_id: Union[str, None] = None,
+        slack_user_name: Union[str, None] = None,
+        slack_auth_token: Union[str, None] = None,
         logger_level: int = logging.WARNING,
     ):
         # Init experiment class with relevant info
@@ -40,7 +42,16 @@ class MLEQueue(object):
         self.job_arguments = job_arguments.copy()  # job-specific args
         self.num_seeds = num_seeds  # number seeds to run
         self.max_running_jobs = max_running_jobs  # number of sim running jobs
-        self.message_id = message_id  # Message ts id for slack bot
+
+        # Slack Clusterbot Configuration
+        self.slack_message_id = slack_message_id  # Message ts id for slack bot
+        self.slack_user_name = slack_user_name  # Slack user name to send message to
+        self.slack_auth_token = slack_auth_token  # Slack Authentication Token
+
+        # Virtual environment usage & GCS code directory
+        self.use_conda_virtual_env = use_conda_virtual_env
+        self.use_venv_virtual_env = use_venv_virtual_env
+        self.gcp_code_dir = gcp_code_dir
 
         # Instantiate/connect a logger
         self.logger = logging.getLogger(__name__)
@@ -63,9 +74,7 @@ class MLEQueue(object):
         # Extract extra_cmd_line_input from job_arguments
         if self.job_arguments is not None:
             if "extra_cmd_line_input" in self.job_arguments.keys():
-                self.extra_cmd_line_input = self.job_arguments[
-                    "extra_cmd_line_input"
-                ]  # noqa: 501
+                self.extra_cmd_line_input = self.job_arguments["extra_cmd_line_input"]
                 del self.job_arguments["extra_cmd_line_input"]
             else:
                 self.extra_cmd_line_input = None
@@ -134,19 +143,19 @@ class MLEQueue(object):
             total=self.num_total_jobs, bar_format="{l_bar}{bar:45}{r_bar}{bar:-45b}"
         )
 
-        if self.message_id is not None:
+        if self.slack_message_id is not None:
             try:
                 from clusterbot import ClusterBot
             except ImportError:
                 raise ImportError(
-                    "You need to install `slack-clusterbot` to "
+                    "You need to install & setup `slack-clusterbot` to "
                     "use status notifications."
                 )
             slackbot = ClusterBot(
-                slack_token=mle_config.slack.slack_token,
-                user_name=mle_config.slack.user_name,
+                slack_token=self.slack_auth_token,
+                user_name=self.slack_user_name,
             )
-            slackbot.init_pbar(self.num_total_jobs, ts=self.message_id)
+            slackbot.init_pbar(self.num_total_jobs, ts=self.slack_message_id)
 
         # 3. Monitor & launch new waiting jobs when resource available
         while self.num_completed_jobs < self.num_total_jobs:
@@ -161,7 +170,7 @@ class MLEQueue(object):
                         self.num_running_jobs -= 1
                         job["status"] = 0
                         self.pbar.update(1)
-                        if self.message_id is not None:
+                        if self.slack_message_id is not None:
                             slackbot.update_pbar()
 
                         # Merge seeds of one eval/config if all jobs done!
@@ -200,6 +209,9 @@ class MLEQueue(object):
             self.experiment_dir,
             cmd_line_input,
             self.extra_cmd_line_input,
+            self.use_conda_virtual_env,
+            self.use_venv_virtual_env,
+            self.gcp_code_dir,
         )
 
         # 2. Launch a single experiment
