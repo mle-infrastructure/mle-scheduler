@@ -20,9 +20,9 @@ class MLEQueue(object):
         resource_to_run: str,
         job_filename: str,
         config_filenames: Union[str, List[str]],
-        job_arguments: Union[None, dict],
-        experiment_dir: str,
-        num_seeds: int,
+        job_arguments: Union[None, dict] = {},
+        experiment_dir: str = "experiments/",
+        num_seeds: int = 1,
         default_seed: int = 0,
         random_seeds: Union[None, List[int]] = None,
         max_running_jobs: int = 10,
@@ -122,7 +122,7 @@ class MLEQueue(object):
         self.logger.info("TOTAL JOBS TO EXECUTE - {}".format(self.num_total_jobs))
 
     def run(self) -> None:
-        """Launch -> Monitor -> Merge individual logs."""
+        """Schedule -> Monitor -> Merge individual logs."""
         # 1. Spawn 1st batch of evals until limit of allowed usage is reached
         while self.num_running_jobs < min(self.max_running_jobs, self.num_total_jobs):
             job, job_id = self.launch(self.queue_counter)

@@ -7,28 +7,6 @@ from ..cluster.slurm.helpers_launch_slurm import slurm_generate_startup_file
 from mle_toolbox import mle_config
 
 
-def slurm_check_job_args(job_arguments: Union[dict, None]) -> dict:
-    """Check the input job arguments & add default values if missing."""
-    if job_arguments is None:
-        job_arguments = {}
-
-    # Add the default config values if they are missing from job_args
-    for k, v in mle_config.slurm.default_job_arguments.items():
-        if k not in job_arguments.keys():
-            job_arguments[k] = v
-
-    # Reformatting of time for Slurm SBASH - d-hh:mm but in is dd:hh:mm
-    if "time_per_job" in job_arguments.keys():
-        days, hours, minutes = job_arguments["time_per_job"].split(":")
-        slurm_time = days[1] + "-" + hours + ":" + minutes
-        job_arguments["time_per_job"] = slurm_time
-
-    # SGE gives logical cores while Slurm seems to give only threads?!
-    if "num_logical_cores" in job_arguments.keys():
-        job_arguments["num_logical_cores"] = job_arguments["num_logical_cores"]
-    return job_arguments
-
-
 def slurm_submit_job(
     filename: str, cmd_line_arguments: str, job_arguments: dict, clean_up: bool = True
 ) -> str:

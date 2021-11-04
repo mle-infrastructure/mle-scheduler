@@ -4,30 +4,12 @@ import datetime
 import os
 import random
 import re
-from dotmap import DotMap
-from typing import Union
 from ..cloud.gcp.helpers_launch_gcp import (
     gcp_generate_startup_file,
     gcp_get_submission_cmd,
     gcp_delete_vm_instance,
 )
 from mle_toolbox import mle_config
-
-
-def gcp_check_job_args(job_arguments: Union[dict, None]) -> dict:
-    """Check the input job arguments & add default values if missing."""
-    if job_arguments is None:
-        job_arguments = {}
-
-    # Add the default config values if they are missing from job_args
-    for k, v in mle_config.gcp.default_job_arguments.items():
-        if k not in job_arguments.keys():
-            job_arguments[k] = v
-
-    # If no local code dir provided: Copy over the current working dir
-    if "local_code_dir" not in job_arguments.keys():
-        job_arguments["local_code_dir"] = os.getcwd()
-    return DotMap(job_arguments)
 
 
 def gcp_submit_job(

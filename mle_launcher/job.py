@@ -4,19 +4,16 @@ import time
 import logging
 from typing import Union
 from .manage.manage_job_local import (
-    local_check_job_args,
     local_submit_job,
     local_submit_venv_job,
     local_submit_conda_job,
 )
-from .manage.manage_job_sge import sge_check_job_args, sge_submit_job, sge_monitor_job
+from .manage.manage_job_sge import sge_submit_job, sge_monitor_job
 from .manage.manage_job_slurm import (
-    slurm_check_job_args,
     slurm_submit_job,
     slurm_monitor_job,
 )
 from .manage.manage_job_gcp import (
-    gcp_check_job_args,
     gcp_submit_job,
     gcp_monitor_job,
     gcp_clean_up,
@@ -70,7 +67,7 @@ class MLEJob(object):
         resource_to_run: str,
         job_filename: str,
         config_filename: Union[None, str],
-        job_arguments: dict = {},
+        job_arguments: dict,
         experiment_dir: str = "experiments/",
         cmd_line_input: Union[None, dict] = None,
         extra_cmd_line_input: Union[None, dict] = None,
@@ -83,12 +80,10 @@ class MLEJob(object):
         self.resource_to_run = resource_to_run  # compute resource for job
         self.job_filename = job_filename  # path to train script
         self.config_filename = config_filename  # path to config json
+        self.job_arguments = job_arguments  # Job resource configuration
         self.experiment_dir = experiment_dir  # main results dir (create)
         if not os.path.exists(self.experiment_dir):
             os.makedirs(self.experiment_dir)
-
-        # Check if all required args are given - otw. add default to copy
-        self.job_arguments = self.check_job_args(job_arguments.copy())
 
         # Create command line arguments for job to schedule (passed to .py)
         self.cmd_line_args = self.generate_cmd_line_args(cmd_line_input)
@@ -107,18 +102,6 @@ class MLEJob(object):
         # Instantiate/connect a logger
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logger_level)
-
-    def check_job_args(self, job_arguments):
-        """Check if required args are provided. Complete w. default otw."""
-        if self.resource_to_run == "sge-cluster":
-            full_job_arguments = sge_check_job_args(job_arguments)
-        elif self.resource_to_run == "slurm-cluster":
-            full_job_arguments = slurm_check_job_args(job_arguments)
-        elif self.resource_to_run == "gcp-cloud":
-            full_job_arguments = gcp_check_job_args(job_arguments)
-        else:
-            full_job_arguments = local_check_job_args(job_arguments)
-        return full_job_arguments
 
     def run(self) -> bool:
         """Schedule experiment, monitor and clean up afterwards."""

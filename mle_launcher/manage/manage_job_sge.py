@@ -7,27 +7,6 @@ from ..cluster.sge.helpers_launch_sge import sge_generate_startup_file
 from mle_toolbox import mle_config
 
 
-def sge_check_job_args(job_arguments: Union[dict, None]) -> dict:
-    """Check the input job arguments & add default values if missing."""
-    if job_arguments is None:
-        job_arguments = {}
-
-    # Add the default config values if they are missing from job_args
-    for k, v in mle_config.sge.default_job_arguments.items():
-        if k not in job_arguments.keys():
-            job_arguments[k] = v
-
-    # Reformatting of time for SGE qsub - hh:mm:ss but in is dd:hh:mm
-    if "time_per_job" in job_arguments.keys():
-        days, hours, minutes = job_arguments["time_per_job"].split(":")
-        hours_sge = str(int(days) * 24 + int(hours))
-        if len(hours_sge) < 2:
-            hours_sge = "0" + hours_sge
-        sge_time = hours_sge + ":" + minutes + ":00"
-        job_arguments["time_per_job"] = sge_time
-    return job_arguments
-
-
 def sge_submit_job(
     filename: str, cmd_line_arguments: str, job_arguments: dict, clean_up: bool = True
 ) -> str:
