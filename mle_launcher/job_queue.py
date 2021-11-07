@@ -32,6 +32,7 @@ class MLEQueue(object):
         slack_message_id: Union[str, None] = None,
         slack_user_name: Union[str, None] = None,
         slack_auth_token: Union[str, None] = None,
+        automerge_seeds: bool = True,
         logger_level: int = logging.WARNING,
     ):
         # Init experiment class with relevant info
@@ -70,6 +71,7 @@ class MLEQueue(object):
             ).tolist()
         elif self.num_seeds == 1 and random_seeds is None:
             self.random_seeds = [default_seed]
+        self.automerge_seeds = automerge_seeds
 
         # Extract extra_cmd_line_input from job_arguments
         if self.job_arguments is not None:
@@ -179,7 +181,7 @@ class MLEQueue(object):
                             if other_job["config_fname"] == job["config_fname"]:
                                 if other_job["status"] == 0:
                                     completed_seeds += 1
-                        if completed_seeds == self.num_seeds:
+                        if completed_seeds == self.num_seeds and self.automerge_seeds:
                             self.merge_seeds(job["experiment_dir"], job["base_str"])
                 time.sleep(0.1)
 

@@ -29,7 +29,6 @@ def local_submit_conda_job(filename: str, cmd_line_arguments: str, job_arguments
                     && {cmd}"
     except Exception:
         pass
-
     proc = submit_subprocess(cmd)
     return proc
 

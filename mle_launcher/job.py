@@ -69,7 +69,7 @@ class MLEJob(object):
         job_filename: str,
         config_filename: Union[None, str],
         job_arguments: dict,
-        experiment_dir: str = "experiments/",
+        experiment_dir: Union[None, str] = "experiments/",
         cmd_line_input: Union[None, dict] = None,
         extra_cmd_line_input: Union[None, dict] = None,
         use_conda_virtual_env: bool = False,
@@ -83,8 +83,9 @@ class MLEJob(object):
         self.config_filename = config_filename  # path to config json
         self.job_arguments = job_arguments.copy()  # Job resource configuration
         self.experiment_dir = experiment_dir  # main results dir (create)
-        if not os.path.exists(self.experiment_dir):
-            os.makedirs(self.experiment_dir)
+        if self.experiment_dir is not None:
+            if not os.path.exists(self.experiment_dir):
+                os.makedirs(self.experiment_dir)
 
         self.user_name = getpass.getuser()
 
@@ -105,7 +106,7 @@ class MLEJob(object):
         self.cloud_settings = cloud_settings
 
         # Instantiate/connect a logger
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger()
         self.logger.setLevel(logger_level)
 
     def run(self) -> bool:
@@ -193,7 +194,7 @@ class MLEJob(object):
             status_out = self.monitor_local(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    "PID: {job_id.pid} - Local job successfully "
+                    f"PID: {job_id.pid} - Local job successfully "
                     f"completed - { self.config_filename}"
                 )
             else:
@@ -333,17 +334,18 @@ class MLEJob(object):
 
     def clean_up(self, job_id: str) -> None:
         """Remove error and log files at end of training."""
-        for filename in glob.glob(self.job_arguments["err_file"] + "*"):
-            try:
-                os.remove(filename)
-            except Exception:
-                pass
-        for filename in glob.glob(self.job_arguments["log_file"] + "*"):
-            try:
-                os.remove(filename)
-            except Exception:
-                pass
-        self.logger.info("Cleaned up log, error, results files")
+        if self.resource_to_run != "local":
+            for filename in glob.glob(self.job_arguments["err_file"] + "*"):
+                try:
+                    os.remove(filename)
+                except Exception:
+                    pass
+            for filename in glob.glob(self.job_arguments["log_file"] + "*"):
+                try:
+                    os.remove(filename)
+                except Exception:
+                    pass
+            self.logger.info("Cleaned up log, error, results files")
 
         # Delete VM instance and code directory stored in data bucket
         if self.resource_to_run == "gcp-cloud":
@@ -353,7 +355,8 @@ class MLEJob(object):
 
     def generate_cmd_line_args(self, cmd_line_input: Union[None, dict] = None) -> str:
         """Generate cmd line args for .py -> get_train_configs_ready"""
-        cmd_line_args = " -exp_dir " + self.experiment_dir
+        if self.experiment_dir is not None:
+            cmd_line_args = " -exp_dir " + self.experiment_dir
 
         if self.config_filename is not None:
             cmd_line_args += " -config " + self.config_filename
@@ -362,7 +365,12 @@ class MLEJob(object):
             if "seed_id" in cmd_line_input.keys():
                 cmd_line_args += " -seed " + str(cmd_line_input["seed_id"])
                 # Update the job argument details with the seed-job-id
-                self.job_arguments["job_name"] += "-" + str(cmd_line_input["seed_id"])
+                if "job_name" in self.job_arguments.keys():
+                    self.job_arguments["job_name"] += "-" + str(
+                        cmd_line_input["seed_id"]
+                    )
+                else:
+                    self.job_arguments["job_name"] = str(cmd_line_input["seed_id"])
             if "model_ckpt" in cmd_line_input.keys():
                 cmd_line_args += " -model_ckpt " + str(cmd_line_input["model_ckpt"])
         return cmd_line_args

@@ -1,0 +1,3 @@
+lrate: 0.2
+batch_size: 4
+arch: "mlp"
