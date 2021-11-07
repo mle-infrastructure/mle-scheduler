@@ -28,7 +28,7 @@ class MLEQueue(object):
         max_running_jobs: int = 10,
         use_conda_virtual_env: bool = False,
         use_venv_virtual_env: bool = False,
-        gcp_code_dir: Union[str, None] = None,
+        cloud_settings: Union[dict, None] = None,
         slack_message_id: Union[str, None] = None,
         slack_user_name: Union[str, None] = None,
         slack_auth_token: Union[str, None] = None,
@@ -51,7 +51,7 @@ class MLEQueue(object):
         # Virtual environment usage & GCS code directory
         self.use_conda_virtual_env = use_conda_virtual_env
         self.use_venv_virtual_env = use_venv_virtual_env
-        self.gcp_code_dir = gcp_code_dir
+        self.cloud_settings = cloud_settings
 
         # Instantiate/connect a logger
         self.logger = logging.getLogger(__name__)
@@ -211,7 +211,7 @@ class MLEQueue(object):
             self.extra_cmd_line_input,
             self.use_conda_virtual_env,
             self.use_venv_virtual_env,
-            self.gcp_code_dir,
+            self.cloud_settings,
         )
 
         # 2. Launch a single experiment

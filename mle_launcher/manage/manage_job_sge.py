@@ -4,11 +4,14 @@ import subprocess as sp
 from typing import Union
 from .manage_job_local import submit_subprocess, random_id
 from ..cluster.sge.helpers_launch_sge import sge_generate_startup_file
-from mle_toolbox import mle_config
 
 
 def sge_submit_job(
-    filename: str, cmd_line_arguments: str, job_arguments: dict, clean_up: bool = True
+    filename: str,
+    cmd_line_arguments: str,
+    job_arguments: dict,
+    user_name: str,
+    clean_up: bool = True,
 ) -> str:
     """Create a qsub job & submit it based on provided file to execute."""
     # Create base string of job id
@@ -54,21 +57,9 @@ def sge_submit_job(
 
     # Wait until the job is listed under the qstat scheduled jobs
     while True:
-        try:
-            out = sp.check_output(["qstat", "-u", mle_config.sge.credentials.user_name])
-            job_info = out.split(b"\n")[2:]
-            running_job_ids = [
-                int(job_info[i].decode("utf-8").split()[0])
-                for i in range(len(job_info) - 1)
-            ]
-            job_running = job_id in running_job_ids
-            if job_running:
-                break
-        except sp.CalledProcessError as e:
-            stderr = e.stderr
-            return_code = e.returncode
-            print(stderr, return_code)
-            time.sleep(0.5)
+        job_running = sge_monitor_job(job_id, user_name)
+        if job_running:
+            break
 
     # Finally delete all the unnemle_configessary log files
     if clean_up:
@@ -76,11 +67,11 @@ def sge_submit_job(
     return job_id
 
 
-def sge_monitor_job(job_id: Union[list, int]) -> bool:
+def sge_monitor_job(job_id: Union[list, int], user_name: str) -> bool:
     """Monitor the status of a job based on its id."""
     while True:
         try:
-            out = sp.check_output(["qstat", "-u", mle_config.sge.credentials.user_name])
+            out = sp.check_output(["qstat", "-u", user_name])
             break
         except sp.CalledProcessError as e:
             stderr = e.stderr

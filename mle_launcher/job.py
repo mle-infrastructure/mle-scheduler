@@ -2,6 +2,7 @@ import os
 import glob
 import time
 import logging
+import getpass
 from typing import Union
 from .manage.manage_job_local import (
     local_submit_job,
@@ -73,17 +74,19 @@ class MLEJob(object):
         extra_cmd_line_input: Union[None, dict] = None,
         use_conda_virtual_env: bool = False,
         use_venv_virtual_env: bool = False,
-        gcp_code_dir: Union[str, None] = None,
+        cloud_settings: Union[dict, None] = None,
         logger_level: int = logging.WARNING,
     ):
         # Init job class with relevant info
         self.resource_to_run = resource_to_run  # compute resource for job
         self.job_filename = job_filename  # path to train script
         self.config_filename = config_filename  # path to config json
-        self.job_arguments = job_arguments  # Job resource configuration
+        self.job_arguments = job_arguments.copy()  # Job resource configuration
         self.experiment_dir = experiment_dir  # main results dir (create)
         if not os.path.exists(self.experiment_dir):
             os.makedirs(self.experiment_dir)
+
+        self.user_name = getpass.getuser()
 
         # Create command line arguments for job to schedule (passed to .py)
         self.cmd_line_args = self.generate_cmd_line_args(cmd_line_input)
@@ -97,7 +100,9 @@ class MLEJob(object):
         # Virtual environment usage & GCS code directory
         self.use_conda_virtual_env = use_conda_virtual_env
         self.use_venv_virtual_env = use_venv_virtual_env
-        self.gcp_code_dir = gcp_code_dir
+        if self.resource_to_run in cloud_resources:
+            assert cloud_settings is not None
+        self.cloud_settings = cloud_settings
 
         # Instantiate/connect a logger
         self.logger = logging.getLogger(__name__)
@@ -217,11 +222,19 @@ class MLEJob(object):
         """Schedules job to run remotely on SGE or Slurm clusters."""
         if self.resource_to_run == "sge-cluster":
             job_id = sge_submit_job(
-                self.job_filename, self.cmd_line_args, self.job_arguments, clean_up=True
+                self.job_filename,
+                self.cmd_line_args,
+                self.job_arguments,
+                self.user_name,
+                clean_up=True,
             )
         elif self.resource_to_run == "slurm-cluster":
             job_id = slurm_submit_job(
-                self.job_filename, self.cmd_line_args, self.job_arguments, clean_up=True
+                self.job_filename,
+                self.cmd_line_args,
+                self.job_arguments,
+                self.user_name,
+                clean_up=True,
             )
         if job_id == -1:
             self.job_status = 0
@@ -233,12 +246,16 @@ class MLEJob(object):
         """Schedules job to run remotely on GCP cloud."""
         if self.resource_to_run == "gcp-cloud":
             # Import utility to copy local code directory to GCS bucket
-            from mle_toolbox.remote.gcloud_transfer import upload_local_dir_to_gcs
+            from .cloud.gcp.file_management_gcp import upload_local_dir_to_gcs
 
             # Send config file to remote machine - independent of code base!
             upload_local_dir_to_gcs(
                 local_path=self.config_filename,
-                gcs_path=os.path.join(self.gcp_code_dir, self.config_filename),
+                gcs_path=os.path.join(
+                    self.cloud_settings["code_dir"], self.config_filename
+                ),
+                gcp_project_name=self.cloud_settings["project_name"],
+                gcp_bucket_name=self.cloud_settings["bucket_name"],
             )
 
             # Submit VM Creation + Startup exec
@@ -247,6 +264,9 @@ class MLEJob(object):
                 self.cmd_line_args,
                 self.job_arguments,
                 self.experiment_dir,
+                self.cloud_settings["code_dir"],
+                self.cloud_settings["results_dir"],
+                self.cloud_settings["bucket_name"],
                 clean_up=True,
             )
         if job_id == -1:
@@ -288,16 +308,16 @@ class MLEJob(object):
         if continuous:
             while self.job_status:
                 if self.resource_to_run == "sge-cluster":
-                    self.job_status = sge_monitor_job(job_id)
+                    self.job_status = sge_monitor_job(job_id, self.user_name)
                 elif self.resource_to_run == "slurm-cluster":
-                    self.job_status = slurm_monitor_job(job_id)
+                    self.job_status = slurm_monitor_job(job_id, self.user_name)
                 time.sleep(1)
             return 0
         else:
             if self.resource_to_run == "sge-cluster":
-                return sge_monitor_job(job_id)
+                return sge_monitor_job(job_id, self.user_name)
             elif self.resource_to_run == "slurm-cluster":
-                return slurm_monitor_job(job_id)
+                return slurm_monitor_job(job_id, self.user_name)
 
     def monitor_cloud(self, job_id: str, continuous: bool = True) -> int:
         """Monitors job remotely on GCP cloud."""

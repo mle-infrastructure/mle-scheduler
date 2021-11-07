@@ -9,7 +9,7 @@ from ..cloud.gcp.helpers_launch_gcp import (
     gcp_get_submission_cmd,
     gcp_delete_vm_instance,
 )
-from mle_toolbox import mle_config
+from ..cloud.gcp.file_management_gcp import delete_gcs_dir
 
 
 def gcp_submit_job(
@@ -17,6 +17,9 @@ def gcp_submit_job(
     cmd_line_arguments: str,
     job_arguments: dict,
     experiment_dir: str,
+    gcp_code_dir: str,
+    gcp_results_dir: str,
+    gcp_bucket_name: str,
     clean_up: bool = True,
 ):
     """Create a GCP VM job & submit it based on provided file to execute."""
@@ -34,9 +37,9 @@ def gcp_submit_job(
         extra_install_fname = None
 
     gcp_generate_startup_file(
-        mle_config.gcp.code_dir,
-        mle_config.gcp.results_dir,
-        mle_config.gcp.bucket_name,
+        gcp_code_dir,
+        gcp_results_dir,
+        gcp_bucket_name,
         filename,
         experiment_dir,
         startup_fname,
@@ -122,18 +125,28 @@ def gcp_monitor_job(vm_name: str, job_arguments: dict):
     return job_status
 
 
-def gcp_clean_up(vm_name: str, job_arguments: dict, experiment_dir: str):
+def gcp_clean_up(
+    vm_name: str,
+    job_arguments: dict,
+    experiment_dir: str,
+    gcp_results_dir: str,
+    gcp_code_dir: str,
+    gcp_project_name: str,
+    gcp_bucket_name: str,
+):
     """Delete VM instance and code GCS directory."""
     # Delete GCP Job after it terminated (avoid storage billing)
     gcp_delete_vm_instance(vm_name, job_arguments.use_tpus)
 
     # Delete code dir in GCS bucket (only keep results of computation)
-    # delete_gcs_dir(gcs_path=mle_config.gcp.code_dir)
+    delete_gcs_dir(gcp_code_dir, gcp_project_name, gcp_bucket_name)
 
     # Download results back to local directory
-    from mle_toolbox.remote.gcloud_transfer import download_gcs_dir
+    from .file_management_gcp import download_gcs_dir
 
     download_gcs_dir(
-        gcs_path=os.path.join(mle_config.gcp.results_dir, experiment_dir),
+        gcs_path=os.path.join(gcp_results_dir, experiment_dir),
+        gcp_project_name=gcp_project_name,
+        gcp_bucket_name=gcp_bucket_name,
         local_path="./" + experiment_dir,
     )

@@ -58,9 +58,3 @@ pip install -e .
 ## Development & Milestones for Next Release
 
 You can run the test suite via `python -m pytest -vv tests/`. If you find a bug or are missing your favourite feature, feel free to contact me [@RobertTLange](https://twitter.com/RobertTLange) or create an issue :hugs:.
-
-- [ ] Get rid of default arguments in `manage` files - provide (default) arguments at job instantiation?
-- [ ] Get rid of username credentials for job monitoring - use job id instead
-  - Grid engine `qstat <job_id>`
-  - Slurm `squeue --job <job_id>`
-- [ ] Get rid of `gcp.code_dir`, `gcp.results_dir`, `gcp.bucket_name`,
