@@ -4,15 +4,15 @@ import datetime
 import os
 import random
 import re
-from ..cloud.gcp.helpers_launch_gcp import (
+from .helpers_launch_gcp import (
     gcp_generate_startup_file,
     gcp_get_submission_cmd,
     gcp_delete_vm_instance,
 )
-from ..cloud.gcp.file_management_gcp import delete_gcs_dir
+from .file_management_gcp import delete_gcs_dir
 
 
-def gcp_submit_job(
+def submit_gcp(
     filename: str,
     cmd_line_arguments: str,
     job_arguments: dict,
@@ -60,7 +60,7 @@ def gcp_submit_job(
     # 4. Wait until job is listed as running (ca. 2 minute!)
     while True:
         try:
-            job_running = gcp_monitor_job(vm_name, job_arguments)
+            job_running = monitor_gcp(vm_name, job_arguments)
             if job_running == 1:
                 # Delete statup bash file
                 try:
@@ -79,7 +79,7 @@ def gcp_submit_job(
     return -1
 
 
-def gcp_monitor_job(vm_name: str, job_arguments: dict):
+def monitor_gcp(vm_name: str, job_arguments: dict):
     """Monitor status of job based on vm_name. Requires stable connection."""
     # Check VM status from command line
     use_tpu = job_arguments.use_tpus
@@ -125,7 +125,7 @@ def gcp_monitor_job(vm_name: str, job_arguments: dict):
     return job_status
 
 
-def gcp_clean_up(
+def clean_up_gcp(
     vm_name: str,
     job_arguments: dict,
     experiment_dir: str,

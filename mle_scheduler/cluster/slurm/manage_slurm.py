@@ -2,11 +2,11 @@ import os
 import time
 import subprocess as sp
 from typing import Union
-from .manage_job_local import submit_subprocess, random_id
-from ..cluster.sge.helpers_launch_sge import sge_generate_startup_file
+from ...local import submit_subprocess, random_id
+from .helpers_launch_slurm import slurm_generate_startup_file
 
 
-def sge_submit_job(
+def submit_slurm(
     filename: str,
     cmd_line_arguments: str,
     job_arguments: dict,
@@ -17,7 +17,7 @@ def sge_submit_job(
     # Create base string of job id
     base = "submit_{0}".format(random_id())
 
-    # Write the desired python/bash execution to sge job submission file
+    # Write the desired python/bash execution to slurm job submission file
     f_name, f_extension = os.path.splitext(filename)
     if f_extension == ".py":
         script = f"python {filename} {cmd_line_arguments}"
@@ -30,12 +30,12 @@ def sge_submit_job(
             " are so far implemented. Please open an issue."
         )
     job_arguments["script"] = script
-    sge_job_template = sge_generate_startup_file(job_arguments)
+    slurm_job_template = slurm_generate_startup_file(job_arguments)
 
-    open(base + ".qsub", "w").write(sge_job_template.format(**job_arguments))
+    open(base + ".sh", "w").write(slurm_job_template.format(**job_arguments))
 
     # Submit the job via subprocess call
-    command = "qsub < " + base + ".qsub " + "&>/dev/null"
+    command = "sbatch < " + base + ".sh"
     proc = submit_subprocess(command)
 
     # Wait until system has processed submission
@@ -52,26 +52,25 @@ def sge_submit_job(
         print(out, err)
         job_id = -1
     else:
-        job_info = out.split(b"\n")
-        job_id = int(job_info[0].decode("utf-8").split()[0])
+        job_id = int(out.decode("utf-8").split()[-1])
 
     # Wait until the job is listed under the qstat scheduled jobs
     while True:
-        job_running = sge_monitor_job(job_id, user_name)
+        job_running = monitor_slurm(job_id, user_name)
         if job_running:
             break
-
-    # Finally delete all the unnemle_configessary log files
+    # Finally delete all the unneccessary log files
     if clean_up:
-        os.remove(base + ".qsub")
+        os.remove(base + ".sh")
+
     return job_id
 
 
-def sge_monitor_job(job_id: Union[list, int], user_name: str) -> bool:
+def monitor_slurm(job_id: Union[list, int], user_name: str) -> bool:
     """Monitor the status of a job based on its id."""
     while True:
         try:
-            out = sp.check_output(["qstat", "-u", user_name])
+            out = sp.check_output(["squeue", "-u", user_name])
             break
         except sp.CalledProcessError as e:
             stderr = e.stderr
@@ -79,7 +78,7 @@ def sge_monitor_job(job_id: Union[list, int], user_name: str) -> bool:
             print(stderr, return_code)
             time.sleep(0.5)
 
-    job_info = out.split(b"\n")[2:]
+    job_info = out.split(b"\n")[1:]
     running_job_ids = [
         int(job_info[i].decode("utf-8").split()[0]) for i in range(len(job_info) - 1)
     ]

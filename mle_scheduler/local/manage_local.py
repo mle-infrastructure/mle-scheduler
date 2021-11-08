@@ -5,7 +5,7 @@ import shlex
 import subprocess as sp
 
 
-def local_submit_conda_job(filename: str, cmd_line_arguments: str, job_arguments: dict):
+def submit_conda(filename: str, cmd_line_arguments: str, job_arguments: dict):
     """Create a local job & submit it based on provided file to execute."""
     f_name, f_extension = os.path.splitext(filename)
     if f_extension == ".py":
@@ -33,7 +33,7 @@ def local_submit_conda_job(filename: str, cmd_line_arguments: str, job_arguments
     return proc
 
 
-def local_submit_venv_job(filename: str, cmd_line_arguments: str, job_arguments: dict):
+def submit_venv(filename: str, cmd_line_arguments: str, job_arguments: dict):
     """Create a local job & submit it based on provided file to execute."""
     cmd = f"python {filename} {cmd_line_arguments}"
     env_name = job_arguments["env_name"]
@@ -43,7 +43,7 @@ def local_submit_venv_job(filename: str, cmd_line_arguments: str, job_arguments:
     return proc
 
 
-def local_submit_job(filename: str, cmd_line_arguments: str):
+def submit_local(filename: str, cmd_line_arguments: str):
     """Create a local job & submit it based on provided file to execute."""
     cmd = f"python {filename} {cmd_line_arguments}"
     proc = submit_subprocess(cmd)

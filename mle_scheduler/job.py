@@ -5,25 +5,17 @@ import logging
 from rich.logging import RichHandler
 import getpass
 from typing import Union
-from .manage.manage_job_local import (
-    local_submit_job,
-    local_submit_venv_job,
-    local_submit_conda_job,
-)
-from .manage.manage_job_sge import sge_submit_job, sge_monitor_job
-from .manage.manage_job_slurm import (
-    slurm_submit_job,
-    slurm_monitor_job,
-)
-from .manage.manage_job_gcp import (
-    gcp_submit_job,
-    gcp_monitor_job,
-    gcp_clean_up,
-)
+from .local import submit_local, submit_venv, submit_conda
+from .ssh import submit_ssh, monitor_ssh
+from .cluster.sge import submit_sge, monitor_sge
+from .cluster.slurm import submit_slurm, monitor_slurm
+from .cloud.gcp import submit_gcp, monitor_gcp, clean_up_gcp
+
 
 # Overview of implemented remote resources in addition to local processes
 cluster_resources = ["sge-cluster", "slurm-cluster"]
 cloud_resources = ["gcp-cloud"]
+other_resources = ["ssh-nodes", "local"]
 
 
 class MLEJob(object):
@@ -109,7 +101,8 @@ class MLEJob(object):
             level=logger_level, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
         )
 
-        self.logger = logging.getLogger("rich")
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logger_level)
 
     def run(self) -> bool:
         """Schedule experiment, monitor and clean up afterwards."""
@@ -147,7 +140,7 @@ class MLEJob(object):
                     f"VM Name: {job_id} - Error when scheduling "
                     f"cloud job - {self.config_filename}"
                 )
-        else:
+        elif self.resource_to_run == "local":
             job_id = self.schedule_local()
             if self.job_status == 1:
                 self.logger.info(
@@ -159,7 +152,21 @@ class MLEJob(object):
                     f"PID: {job_id.pid} - Error when scheduling "
                     f"local job - {self.config_filename}"
                 )
-        # Return sge/slurm - job_id (qstat/squeue), gcp - vm_name, local - proc
+        elif self.resource_to_run == "ssh-nodes":
+            job_id = self.schedule_ssh()
+            if self.job_status == 1:
+                self.logger.info(
+                    f"PID: {job_id.pid} - SSH job scheduled "
+                    f"- {self.config_filename}"
+                )
+            else:
+                self.logger.info(
+                    f"PID: {job_id.pid} - Error when scheduling "
+                    f"SSH job - {self.config_filename}"
+                )
+        else:
+            raise ValueError(f"{self.resource_to_run} is not implemented.")
+        # Return sge/slurm - job_id (qstat/squeue), gcp - vm_name, ssh/local - proc
         return job_id
 
     def monitor(self, job_id: str, continuous: bool = True) -> bool:
@@ -182,7 +189,14 @@ class MLEJob(object):
                     f"VM Name: {job_id} - Cloud job "
                     f"completed - {self.config_filename}"
                 )
-        else:
+        elif self.resource_to_run == "ssh-nodes":
+            status_out = self.monitor_ssh(job_id, continuous)
+            if status_out == 0:
+                self.logger.info(
+                    f"SSH PID: {job_id} - Cloud job "
+                    f"completed - {self.config_filename}"
+                )
+        elif self.resource_to_run == "local":
             status_out = self.monitor_local(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
@@ -195,23 +209,29 @@ class MLEJob(object):
         """Schedules job locally on your machine."""
         if "use_conda_virtual_env" in self.job_arguments.keys():
             if self.job_arguments["use_conda_virtual_env"]:
-                proc = local_submit_conda_job(
+                proc = submit_conda(
                     self.job_filename, self.cmd_line_args, self.job_arguments
                 )
         elif "use_venv_virtual_env" in self.job_arguments.keys():
             if self.job_arguments["use_venv_virtual_env"]:
-                proc = local_submit_venv_job(
+                proc = submit_venv(
                     self.job_filename, self.cmd_line_args, self.job_arguments
                 )
         else:
-            proc = local_submit_job(self.job_filename, self.cmd_line_args)
+            proc = submit_local(self.job_filename, self.cmd_line_args)
+        self.job_status = 1
+        return proc
+
+    def schedule_ssh(self):
+        """Schedules job on SSH servers."""
+        proc = submit_ssh(self.job_filename, self.cmd_line_args, self.job_arguments)
         self.job_status = 1
         return proc
 
     def schedule_cluster(self) -> int:
         """Schedules job to run remotely on SGE or Slurm clusters."""
         if self.resource_to_run == "sge-cluster":
-            job_id = sge_submit_job(
+            job_id = submit_sge(
                 self.job_filename,
                 self.cmd_line_args,
                 self.job_arguments,
@@ -219,7 +239,7 @@ class MLEJob(object):
                 clean_up=True,
             )
         elif self.resource_to_run == "slurm-cluster":
-            job_id = slurm_submit_job(
+            job_id = submit_slurm(
                 self.job_filename,
                 self.cmd_line_args,
                 self.job_arguments,
@@ -249,7 +269,7 @@ class MLEJob(object):
             )
 
             # Submit VM Creation + Startup exec
-            job_id = gcp_submit_job(
+            job_id = submit_gcp(
                 self.job_filename,
                 self.cmd_line_args,
                 self.job_arguments,
@@ -293,33 +313,45 @@ class MLEJob(object):
             else:
                 return 0
 
+    def monitor_ssh(self, proc, continuous: bool = True) -> int:
+        """Monitors job remotely on SSH server."""
+        # Poll status of local process & change status when done
+        if continuous:
+            while self.job_status:
+                self.job_status = monitor_ssh(proc)
+                # Sleep until next status check
+                time.sleep(1)
+            return 0
+        else:
+            return monitor_ssh(proc)
+
     def monitor_cluster(self, job_id: str, continuous: bool = True) -> int:
         """Monitors job remotely on SGE or Slurm clusters."""
         if continuous:
             while self.job_status:
                 if self.resource_to_run == "sge-cluster":
-                    self.job_status = sge_monitor_job(job_id, self.user_name)
+                    self.job_status = monitor_sge(job_id, self.user_name)
                 elif self.resource_to_run == "slurm-cluster":
-                    self.job_status = slurm_monitor_job(job_id, self.user_name)
+                    self.job_status = monitor_slurm(job_id, self.user_name)
                 time.sleep(1)
             return 0
         else:
             if self.resource_to_run == "sge-cluster":
-                return sge_monitor_job(job_id, self.user_name)
+                return monitor_sge(job_id, self.user_name)
             elif self.resource_to_run == "slurm-cluster":
-                return slurm_monitor_job(job_id, self.user_name)
+                return monitor_slurm(job_id, self.user_name)
 
     def monitor_cloud(self, job_id: str, continuous: bool = True) -> int:
         """Monitors job remotely on GCP cloud."""
         if continuous:
             while self.job_status:
                 if self.resource_to_run == "gcp-cloud":
-                    self.job_status = gcp_monitor_job(job_id, self.job_arguments)
+                    self.job_status = monitor_gcp(job_id, self.job_arguments)
                 time.sleep(10)
             return 0
         else:
             if self.resource_to_run == "gcp-cloud":
-                return gcp_monitor_job(job_id, self.job_arguments)
+                return monitor_gcp(job_id, self.job_arguments)
 
     def clean_up(self, job_id: str) -> None:
         """Remove error and log files at end of training."""
@@ -338,7 +370,7 @@ class MLEJob(object):
 
         # Delete VM instance and code directory stored in data bucket
         if self.resource_to_run == "gcp-cloud":
-            gcp_clean_up(job_id, self.job_arguments, self.experiment_dir)
+            clean_up_gcp(job_id, self.job_arguments, self.experiment_dir)
             # Wait for download to wrap up!
             time.sleep(100)
 

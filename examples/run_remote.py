@@ -1,4 +1,3 @@
-import logging
 from mle_scheduler import MLEJob, MLEQueue
 
 
@@ -23,7 +22,6 @@ def main(resource_to_run: str):
         config_filename="base_config_1.yaml",
         experiment_dir="logs_single",
         job_arguments=job_args,
-        logger_level=logging.INFO,
     )
 
     job.run()
@@ -40,7 +38,6 @@ def main(resource_to_run: str):
         random_seeds=[0, 1],
         experiment_dir="logs_queue",
         job_arguments=job_args,
-        logger_level=logging.INFO,
     )
     queue.run()
 

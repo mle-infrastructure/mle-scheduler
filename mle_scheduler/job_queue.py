@@ -56,7 +56,8 @@ class MLEQueue(object):
             level=logger_level, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
         )
 
-        self.logger = logging.getLogger("rich")
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logger_level)
 
         # Check whether enough seeds explicitly supplied
         if random_seeds is not None:
@@ -153,10 +154,21 @@ class MLEQueue(object):
                     "You need to install & setup `slack-clusterbot` to "
                     "use status notifications."
                 )
+            logger = logging.getLogger("clusterbot")
+            logger.setLevel(logging.WARNING)
             slackbot = ClusterBot(
                 slack_token=self.slack_auth_token,
                 user_name=self.slack_user_name,
             )
+            if self.slack_message_id is None:
+                self.slack_message_id = slackbot.send(
+                    f":rocket: Start running {self.num_total_jobs} jobs :rocket:\n"
+                    f"→ Compute resource: `{self.resource_to_run}`\n"
+                    f"→ Bash execution file: `{self.job_filename}`\n"
+                    f"→ Config .yaml: `{self.config_filenames}`\n"
+                    f"→ Seeds: `{self.random_seeds}`",
+                    user_name=self.slack_user_name,
+                )
             slackbot.init_pbar(self.num_total_jobs, ts=self.slack_message_id)
 
         # 3. Monitor & launch new waiting jobs when resource available
