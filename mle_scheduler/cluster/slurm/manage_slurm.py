@@ -59,7 +59,7 @@ def submit_slurm(
         job_running = monitor_slurm(job_id, user_name)
         if job_running:
             break
-    # Finally delete all the unneccessary log files
+    # Finally delete all the unneccessary submission file
     if clean_up:
         os.remove(base + ".sh")
 

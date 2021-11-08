@@ -2,6 +2,8 @@ eval_0.yaml
 eval_1.yaml
 logs_single
 logs_queue
+logs_merge
+logs_search
 old.py
 *.gif
 *.zip

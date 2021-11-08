@@ -6,7 +6,7 @@ from rich.logging import RichHandler
 import getpass
 from typing import Union
 from .local import submit_local, submit_venv, submit_conda
-from .ssh import submit_ssh, monitor_ssh
+from .ssh import submit_ssh, monitor_ssh, clean_up_ssh
 from .cluster.sge import submit_sge, monitor_sge
 from .cluster.slurm import submit_slurm, monitor_slurm
 from .cloud.gcp import submit_gcp, monitor_gcp, clean_up_gcp
@@ -15,7 +15,7 @@ from .cloud.gcp import submit_gcp, monitor_gcp, clean_up_gcp
 # Overview of implemented remote resources in addition to local processes
 cluster_resources = ["sge-cluster", "slurm-cluster"]
 cloud_resources = ["gcp-cloud"]
-other_resources = ["ssh-nodes", "local"]
+other_resources = ["ssh-node", "local"]
 
 
 class MLEJob(object):
@@ -66,6 +66,7 @@ class MLEJob(object):
         seed_id: Union[None, int] = None,
         extra_cmd_line_input: Union[None, dict] = None,
         cloud_settings: Union[dict, None] = None,
+        ssh_settings: Union[dict, None] = None,
         logger_level: int = logging.WARNING,
     ):
         # Init job class with relevant info
@@ -90,10 +91,14 @@ class MLEJob(object):
                 self.cmd_line_args, extra_cmd_line_input.copy()
             )
 
-        # Virtual environment usage & GCS code directory
+        # GCP/SSH configurations
         if self.resource_to_run in cloud_resources:
             assert cloud_settings is not None
         self.cloud_settings = cloud_settings
+
+        if self.resource_to_run == "ssh-node":
+            assert ssh_settings is not None
+        self.ssh_settings = ssh_settings
 
         # Instantiate/connect a logger
         FORMAT = "%(message)s"
@@ -152,7 +157,7 @@ class MLEJob(object):
                     f"PID: {job_id.pid} - Error when scheduling "
                     f"local job - {self.config_filename}"
                 )
-        elif self.resource_to_run == "ssh-nodes":
+        elif self.resource_to_run == "ssh-node":
             job_id = self.schedule_ssh()
             if self.job_status == 1:
                 self.logger.info(
@@ -189,7 +194,7 @@ class MLEJob(object):
                     f"VM Name: {job_id} - Cloud job "
                     f"completed - {self.config_filename}"
                 )
-        elif self.resource_to_run == "ssh-nodes":
+        elif self.resource_to_run == "ssh-node":
             status_out = self.monitor_ssh(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
@@ -224,7 +229,9 @@ class MLEJob(object):
 
     def schedule_ssh(self):
         """Schedules job on SSH servers."""
-        proc = submit_ssh(self.job_filename, self.cmd_line_args, self.job_arguments)
+        proc = submit_ssh(
+            self.job_filename, self.cmd_line_args, self.job_arguments, self.ssh_settings
+        )
         self.job_status = 1
         return proc
 
@@ -373,6 +380,10 @@ class MLEJob(object):
             clean_up_gcp(job_id, self.job_arguments, self.experiment_dir)
             # Wait for download to wrap up!
             time.sleep(100)
+
+        # Delete log.txt file on remote machine
+        if self.resource_to_run == "ssh-node":
+            clean_up_ssh(self.ssh_settings)
 
     def generate_cmd_line_args(self) -> str:
         """Generate cmd line args for .py -> get_train_configs_ready"""
