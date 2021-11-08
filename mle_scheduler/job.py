@@ -2,6 +2,7 @@ import os
 import glob
 import time
 import logging
+from rich.logging import RichHandler
 import getpass
 from typing import Union
 from .manage.manage_job_local import (
@@ -68,12 +69,10 @@ class MLEJob(object):
         resource_to_run: str,
         job_filename: str,
         config_filename: Union[None, str],
-        job_arguments: dict,
+        job_arguments: dict = {},
         experiment_dir: Union[None, str] = "experiments/",
-        cmd_line_input: Union[None, dict] = None,
+        seed_id: Union[None, int] = None,
         extra_cmd_line_input: Union[None, dict] = None,
-        use_conda_virtual_env: bool = False,
-        use_venv_virtual_env: bool = False,
         cloud_settings: Union[dict, None] = None,
         logger_level: int = logging.WARNING,
     ):
@@ -83,6 +82,7 @@ class MLEJob(object):
         self.config_filename = config_filename  # path to config json
         self.job_arguments = job_arguments.copy()  # Job resource configuration
         self.experiment_dir = experiment_dir  # main results dir (create)
+        self.seed_id = seed_id  # random seed to be passed as cmd-line arg
         if self.experiment_dir is not None:
             if not os.path.exists(self.experiment_dir):
                 os.makedirs(self.experiment_dir)
@@ -90,7 +90,7 @@ class MLEJob(object):
         self.user_name = getpass.getuser()
 
         # Create command line arguments for job to schedule (passed to .py)
-        self.cmd_line_args = self.generate_cmd_line_args(cmd_line_input)
+        self.cmd_line_args = self.generate_cmd_line_args()
 
         # Add additional cmd line args if extra ones are specified
         if extra_cmd_line_input is not None:
@@ -99,15 +99,17 @@ class MLEJob(object):
             )
 
         # Virtual environment usage & GCS code directory
-        self.use_conda_virtual_env = use_conda_virtual_env
-        self.use_venv_virtual_env = use_venv_virtual_env
         if self.resource_to_run in cloud_resources:
             assert cloud_settings is not None
         self.cloud_settings = cloud_settings
 
         # Instantiate/connect a logger
-        self.logger = logging.getLogger()
-        self.logger.setLevel(logger_level)
+        FORMAT = "%(message)s"
+        logging.basicConfig(
+            level=logger_level, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+        )
+
+        self.logger = logging.getLogger("rich")
 
     def run(self) -> bool:
         """Schedule experiment, monitor and clean up afterwards."""
@@ -170,50 +172,37 @@ class MLEJob(object):
             if status_out == 0:
                 self.logger.info(
                     f"Job ID: {job_id} - "
-                    "Cluster job successfully "
+                    "Cluster job "
                     f"completed - {self.config_filename}"
-                )
-            else:
-                self.logger.info(
-                    f"Job ID: {job_id} - Error when running "
-                    f"cluster job - {self.config_filename}"
                 )
         elif self.resource_to_run in cloud_resources:
             status_out = self.monitor_cloud(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"VM Name: {job_id} - Cloud job successfully "
+                    f"VM Name: {job_id} - Cloud job "
                     f"completed - {self.config_filename}"
-                )
-            else:
-                self.logger.info(
-                    f"VM Name: {job_id} - Error when running "
-                    f"cloud job - {self.config_filename}"
                 )
         else:
             status_out = self.monitor_local(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"PID: {job_id.pid} - Local job successfully "
+                    f"PID: {job_id.pid} - Local job "
                     f"completed - { self.config_filename}"
-                )
-            else:
-                self.logger.info(
-                    f"PID: {job_id.pid} - Error when running "
-                    f"local job - {self.config_filename}"
                 )
         return status_out
 
     def schedule_local(self):
         """Schedules job locally on your machine."""
-        if self.use_conda_virtual_env:
-            proc = local_submit_conda_job(
-                self.job_filename, self.cmd_line_args, self.job_arguments
-            )
-        elif self.use_venv_virtual_env:
-            proc = local_submit_venv_job(
-                self.job_filename, self.cmd_line_args, self.job_arguments
-            )
+        if "use_conda_virtual_env" in self.job_arguments.keys():
+            if self.job_arguments["use_conda_virtual_env"]:
+                proc = local_submit_conda_job(
+                    self.job_filename, self.cmd_line_args, self.job_arguments
+                )
+        elif "use_venv_virtual_env" in self.job_arguments.keys():
+            if self.job_arguments["use_venv_virtual_env"]:
+                proc = local_submit_venv_job(
+                    self.job_filename, self.cmd_line_args, self.job_arguments
+                )
         else:
             proc = local_submit_job(self.job_filename, self.cmd_line_args)
         self.job_status = 1
@@ -353,7 +342,7 @@ class MLEJob(object):
             # Wait for download to wrap up!
             time.sleep(100)
 
-    def generate_cmd_line_args(self, cmd_line_input: Union[None, dict] = None) -> str:
+    def generate_cmd_line_args(self) -> str:
         """Generate cmd line args for .py -> get_train_configs_ready"""
         if self.experiment_dir is not None:
             cmd_line_args = " -exp_dir " + self.experiment_dir
@@ -361,18 +350,13 @@ class MLEJob(object):
         if self.config_filename is not None:
             cmd_line_args += " -config " + self.config_filename
 
-        if cmd_line_input is not None:
-            if "seed_id" in cmd_line_input.keys():
-                cmd_line_args += " -seed " + str(cmd_line_input["seed_id"])
-                # Update the job argument details with the seed-job-id
-                if "job_name" in self.job_arguments.keys():
-                    self.job_arguments["job_name"] += "-" + str(
-                        cmd_line_input["seed_id"]
-                    )
-                else:
-                    self.job_arguments["job_name"] = str(cmd_line_input["seed_id"])
-            if "model_ckpt" in cmd_line_input.keys():
-                cmd_line_args += " -model_ckpt " + str(cmd_line_input["model_ckpt"])
+        if self.seed_id is not None:
+            cmd_line_args += " -seed " + str(self.seed_id)
+            # Update the job argument details with the seed-job-id
+            if "job_name" in self.job_arguments.keys():
+                self.job_arguments["job_name"] += "-" + str(self.seed_id)
+            else:
+                self.job_arguments["job_name"] = str(self.seed_id)
         return cmd_line_args
 
     def generate_extra_cmd_line_args(

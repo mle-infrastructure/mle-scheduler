@@ -54,13 +54,11 @@ def slurm_submit_job(
     else:
         job_id = int(out.decode("utf-8").split()[-1])
 
-    # TODO: Add check that status is running!
     # Wait until the job is listed under the qstat scheduled jobs
     while True:
-        while True:
-            job_running = slurm_monitor_job(job_id, user_name)
-            if job_running:
-                break
+        job_running = slurm_monitor_job(job_id, user_name)
+        if job_running:
+            break
     # Finally delete all the unneccessary log files
     if clean_up:
         os.remove(base + ".sh")

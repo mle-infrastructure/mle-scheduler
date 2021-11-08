@@ -1,10 +1,10 @@
 import os
 import logging
+from rich.logging import RichHandler
 import time
 import datetime
 from tqdm import tqdm
-from typing import Union
-from typing import List
+from typing import Union, List
 import numpy as np
 from .job import MLEJob
 
@@ -20,19 +20,17 @@ class MLEQueue(object):
         resource_to_run: str,
         job_filename: str,
         config_filenames: Union[str, List[str]],
-        job_arguments: Union[None, dict] = {},
+        job_arguments: dict = {},
         experiment_dir: str = "experiments/",
         num_seeds: int = 1,
         default_seed: int = 0,
         random_seeds: Union[None, List[int]] = None,
         max_running_jobs: int = 10,
-        use_conda_virtual_env: bool = False,
-        use_venv_virtual_env: bool = False,
+        automerge_seeds: bool = False,
         cloud_settings: Union[dict, None] = None,
         slack_message_id: Union[str, None] = None,
         slack_user_name: Union[str, None] = None,
         slack_auth_token: Union[str, None] = None,
-        automerge_seeds: bool = True,
         logger_level: int = logging.WARNING,
     ):
         # Init experiment class with relevant info
@@ -50,18 +48,20 @@ class MLEQueue(object):
         self.slack_auth_token = slack_auth_token  # Slack Authentication Token
 
         # Virtual environment usage & GCS code directory
-        self.use_conda_virtual_env = use_conda_virtual_env
-        self.use_venv_virtual_env = use_venv_virtual_env
         self.cloud_settings = cloud_settings
 
         # Instantiate/connect a logger
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logger_level)
+        FORMAT = "%(message)s"
+        logging.basicConfig(
+            level=logger_level, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+        )
+
+        self.logger = logging.getLogger("rich")
 
         # Check whether enough seeds explicitly supplied
         if random_seeds is not None:
-            assert len(random_seeds) == num_seeds
             self.random_seeds = random_seeds
+            self.num_seeds = len(self.random_seeds)
 
         # Generate a list of dictionaries with different random seed cmd input
         if self.num_seeds > 1 and random_seeds is None:
@@ -135,7 +135,7 @@ class MLEQueue(object):
             self.queue_counter += 1
             time.sleep(0.1)
         self.logger.info(
-            "LAUNCH - FIRST {}/{} SET OF JOBS".format(
+            "LAUNCH - SET OF {}/{} JOBS".format(
                 self.num_running_jobs, self.num_total_jobs
             )
         )
@@ -145,7 +145,7 @@ class MLEQueue(object):
             total=self.num_total_jobs, bar_format="{l_bar}{bar:45}{r_bar}{bar:-45b}"
         )
 
-        if self.slack_message_id is not None:
+        if self.slack_user_name is not None and self.slack_auth_token is not None:
             try:
                 from clusterbot import ClusterBot
             except ImportError:
@@ -172,7 +172,10 @@ class MLEQueue(object):
                         self.num_running_jobs -= 1
                         job["status"] = 0
                         self.pbar.update(1)
-                        if self.slack_message_id is not None:
+                        if (
+                            self.slack_user_name is not None
+                            and self.slack_auth_token is not None
+                        ):
                             slackbot.update_pbar()
 
                         # Merge seeds of one eval/config if all jobs done!
@@ -202,17 +205,14 @@ class MLEQueue(object):
     def launch(self, queue_counter):
         """Launch a set of jobs for one configuration - one for each seed."""
         # 1. Instantiate the experiment class and start a single seed
-        cmd_line_input = {"seed_id": self.queue[queue_counter]["seed_id"]}
         job = MLEJob(
             self.resource_to_run,
             self.job_filename,
             self.queue[queue_counter]["config_fname"],
             self.job_arguments,
             self.experiment_dir,
-            cmd_line_input,
+            self.queue[queue_counter]["seed_id"],
             self.extra_cmd_line_input,
-            self.use_conda_virtual_env,
-            self.use_venv_virtual_env,
             self.cloud_settings,
         )
 
@@ -240,7 +240,7 @@ class MLEQueue(object):
         except ModuleNotFoundError as err:
             raise ModuleNotFoundError(
                 f"{err}. You need to install `mle_logging` "
-                "to use the `merge_seeds` methods."
+                "to use the `merge_seeds` method."
             )
 
         # Only merge logs if job is based on python job!

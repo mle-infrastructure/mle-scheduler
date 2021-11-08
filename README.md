@@ -1,57 +1,71 @@
 # Lightweight Cluster/Cloud VM Job Scheduling 🚂
-[![Pyversions](https://img.shields.io/pypi/pyversions/mle-launcher.svg?style=flat-square)](https://pypi.python.org/pypi/mle-launcher)
-[![PyPI version](https://badge.fury.io/py/mle-monitor.svg)](https://badge.fury.io/py/mle-launcher)
+[![Pyversions](https://img.shields.io/pypi/pyversions/mle-scheduler.svg?style=flat-square)](https://pypi.python.org/pypi/mle-scheduler)
+[![PyPI version](https://badge.fury.io/py/mle-monitor.svg)](https://badge.fury.io/py/mle-scheduler)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/RobertTLange/mle-launcher/blob/main/examples/getting_started.ipynb)
-<a href="https://github.com/RobertTLange/mle-launcher/blob/main/docs/logo_transparent.png?raw=true"><img src="https://github.com/RobertTLange/mle-launcher/blob/main/docs/logo_transparent.png?raw=true" width="200" align="right" /></a>
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/RobertTLange/mle-scheduler/blob/main/examples/getting_started.ipynb)
+<a href="https://github.com/RobertTLange/mle-scheduler/blob/main/docs/logo_transparent.png?raw=true"><img src="https://github.com/RobertTLange/mle-scheduler/blob/main/docs/logo_transparent.png?raw=true" width="200" align="right" /></a>
 
-`mle-launcher` provides two core functionalities for scheduling/monitoring python/shell-based jobs locally, on SSH servers, Slurm & GridEngine clusters and GCP cloud VMs:
+`mle-scheduler` provides two core functionalities for scheduling/monitoring python/shell-based jobs locally, on SSH servers, Slurm & GridEngine clusters and GCP cloud VMs:
 
 ## Single Job Management with `MLEJob` 🚀
 
 ```python
-from mle_launcher import MLEJob
+from mle_scheduler import MLEJob
 
-# Launch a python train_mnist.py -config base_config.json job
-job = MLEJob(resource_to_run="slurm",
+# Launch a single job via
+# python train_mnist.py -config base_config_1.yaml -exp_dir logs_single/<date>_base_config_1
+job = MLEJob(resource_to_run="local",
              job_filename="train.py",
-             config_filename="base_config.json")
+             config_filename="base_config_1.yaml",
+             experiment_dir="logs_single",
+             job_arguments={"env_name": "mle-toolbox"},
+             use_conda_virtual_env=True,
+             logger_level=logging.INFO)
+
+job.run()
 ```
 
 ## Job Queue Management with `MLEQueue` 🚀🚀🚀
 
 ```python
-from mle_launcher import MLEQueue
+from mle_scheduler import MLEQueue
 
 # Launch a queue of 4 jobs (2 configs x 2 seeds)
-# python train_mnist.py -config base_config_1.json -seed 0
-# python train_mnist.py -config base_config_1.json -seed 1
-# python train_mnist.py -config base_config_2.json -seed 0
-# python train_mnist.py -config base_config_2.json -seed 1
-queue = MLEQueue(resource_to_run="slurm",
+# python train.py -config base_config_1.yaml -seed 0 -exp_dir logs_queue/<date>_base_config_1
+# python train.py -config base_config_1.yaml -seed 1 -exp_dir logs_queue/<date>_base_config_1
+# python train.py -config base_config_2.yaml -seed 0 -exp_dir logs_queue/<date>_base_config_2
+# python train.py -config base_config_2.yaml -seed 1 -exp_dir logs_queue/<date>_base_config_2
+queue = MLEQueue(resource_to_run="local",
                  job_filename="train.py",
-                 config_filenames=["base_config_1.json",
-                                   "base_config_2.json"],
-                 random_seeds=[0, 1])
+                 config_filenames=["base_config_1.yaml",
+                                   "base_config_2.yaml"],
+                 num_seeds=2,
+                 random_seeds=[0, 1],
+                 experiment_dir="logs_queue",
+                 job_arguments={"env_name": "mle-toolbox"},
+                 use_conda_virtual_env=True,
+                 automerge_seeds=True,
+                 logger_level=logging.INFO)
+queue.run()
 ```
 
 For a quickstart check out the [notebook blog](https://github.com/mle-infrastructure/mle-hyperopt/blob/main/examples/getting_started.ipynb) 📖.
 
-![](https://github.com/mle-infrastructure/mle-launcher/blob/main/docs/mle_lanucher_structure.png?raw=true)
+![](https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/mle_scheduler_structure.png?raw=true)
 
 ## Installation ⏳
 
 A PyPI installation is available via:
 
 ```
-pip install mle-launcher
+pip install mle-scheduler
 ```
 
 Alternatively, you can clone this repository and afterwards 'manually' install it:
 
 ```
-git clone https://github.com/mle-infrastructure/mle-launcher.git
-cd mle-launcher
+git clone https://github.com/mle-infrastructure/mle-scheduler.git
+cd mle-scheduler
 pip install -e .
 ```
 

@@ -1,4 +1,4 @@
-from mle_launcher.cluster.slurm.helpers_launch_slurm import slurm_generate_startup_file
+from mle_scheduler.cluster.slurm.helpers_launch_slurm import slurm_generate_startup_file
 
 job_arguments = {
     "num_logical_cores": 5,
@@ -20,7 +20,7 @@ job_script = """#!/bin/bash
 #SBATCH --error=job.err                  # error file
 #SBATCH --partition=standard                 # partition to submit to
 #SBATCH --cpus-per-task=5     # number of cpus
-#SBATCH --gres=gpu:RTX2080:1 
+#SBATCH --gres=gpu:RTX2080:1
 #SBATCH --mem-per-cpu=2000
 #SBATCH --time=10:05:02
 

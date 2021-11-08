@@ -1,4 +1,4 @@
-from mle_launcher.cluster.sge.helpers_launch_sge import sge_generate_startup_file
+from mle_scheduler.cluster.sge.helpers_launch_sge import sge_generate_startup_file
 
 job_arguments = {
     "num_logical_cores": 5,

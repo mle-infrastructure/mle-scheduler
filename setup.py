@@ -20,7 +20,7 @@ def parse_requirements(path: str) -> List[str]:
         ]
 
 
-VERSIONFILE = "mle_launcher/_version.py"
+VERSIONFILE = "mle_scheduler/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
@@ -28,18 +28,20 @@ if mo:
     verstr = mo.group(1)
 else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
-git_tar = f"https://github.com/mle-infrastructure/mle-launcher/archive/v{verstr}.tar.gz"
+git_tar = (
+    f"https://github.com/mle-infrastructure/mle-scheduler/archive/v{verstr}.tar.gz"
+)
 
 
 setup(
-    name="mle_launcher",
+    name="mle_scheduler",
     version=verstr,
     author="Robert Tjarko Lange",
     author_email="robertlange0@gmail.com",
-    description="Machine Learning Experiment Job Launcher",
+    description="Machine Learning Experiment Job Scheduler",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/mle-infrastructure/mle-launcher",
+    url="https://github.com/mle-infrastructure/mle-scheduler",
     download_url=git_tar,
     classifiers=[
         "Programming Language :: Python :: 3.6",
@@ -56,4 +58,5 @@ setup(
     platforms="any",
     python_requires=">=3.6",
     install_requires=parse_requirements(os.path.join(CURRENT_DIR, "requirements.txt")),
+    tests_require=["mle-logging"],
 )
