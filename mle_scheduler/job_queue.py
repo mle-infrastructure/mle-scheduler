@@ -7,6 +7,7 @@ from tqdm import tqdm
 from typing import Union, List
 import numpy as np
 from .job import MLEJob
+from .ssh import send_code_ssh, copy_results_ssh, clean_up_ssh
 
 
 class MLEQueue(object):
@@ -28,6 +29,7 @@ class MLEQueue(object):
         max_running_jobs: int = 10,
         automerge_seeds: bool = False,
         cloud_settings: Union[dict, None] = None,
+        ssh_settings: Union[dict, None] = None,
         slack_message_id: Union[str, None] = None,
         slack_user_name: Union[str, None] = None,
         slack_auth_token: Union[str, None] = None,
@@ -47,8 +49,13 @@ class MLEQueue(object):
         self.slack_user_name = slack_user_name  # Slack user name to send message to
         self.slack_auth_token = slack_auth_token  # Slack Authentication Token
 
-        # Virtual environment usage & GCS code directory
+        # Virtual environment usage & GCS code directory/SSH settings
         self.cloud_settings = cloud_settings
+        self.ssh_settings = ssh_settings
+
+        if resource_to_run == "ssh-node":
+            if self.ssh_settings["start_up_copy_dir"]:
+                send_code_ssh(self.ssh_settings)
 
         # Instantiate/connect a logger
         FORMAT = "%(message)s"
@@ -214,6 +221,18 @@ class MLEQueue(object):
                 time.sleep(0.1)
         self.pbar.close()
 
+        if self.resource_to_run == "ssh-node":
+            copy_results_ssh(
+                self.ssh_settings,
+                remote_dir=os.path.join(
+                    self.ssh_settings["remote_dir"], self.experiment_dir
+                ),
+            )
+            # Clean up the scp code directory
+            if "clean_up_remote_dir" in self.ssh_settings.keys():
+                if self.ssh_settings["clean_up_remote_dir"]:
+                    clean_up_ssh(self.ssh_settings)
+
     def launch(self, queue_counter):
         """Launch a set of jobs for one configuration - one for each seed."""
         # 1. Instantiate the experiment class and start a single seed
@@ -226,6 +245,7 @@ class MLEQueue(object):
             self.queue[queue_counter]["seed_id"],
             self.extra_cmd_line_input,
             self.cloud_settings,
+            self.ssh_settings,
         )
 
         # 2. Launch a single experiment

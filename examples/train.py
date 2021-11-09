@@ -33,8 +33,12 @@ def main(experiment_dir: str, config_fname: str, seed_id: int):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Let's train a network.")
-    parser.add_argument("-exp_dir", "--experiment_dir", type=str)
-    parser.add_argument("-config", "--config_fname", type=str)
+    parser.add_argument(
+        "-exp_dir", "--experiment_dir", type=str, default="experiments/"
+    )
+    parser.add_argument(
+        "-config", "--config_fname", type=str, default="base_config_1.yaml"
+    )
     parser.add_argument("-seed", "--seed_id", type=int, default=1)
     args = vars(parser.parse_args())
     main(args["experiment_dir"], args["config_fname"], args["seed_id"])

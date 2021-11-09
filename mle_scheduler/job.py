@@ -6,7 +6,7 @@ from rich.logging import RichHandler
 import getpass
 from typing import Union
 from .local import submit_local, submit_venv, submit_conda
-from .ssh import submit_ssh, monitor_ssh, clean_up_ssh
+from .ssh import submit_ssh, monitor_ssh
 from .cluster.sge import submit_sge, monitor_sge
 from .cluster.slurm import submit_slurm, monitor_slurm
 from .cloud.gcp import submit_gcp, monitor_gcp, clean_up_gcp
@@ -161,8 +161,7 @@ class MLEJob(object):
             job_id = self.schedule_ssh()
             if self.job_status == 1:
                 self.logger.info(
-                    f"PID: {job_id.pid} - SSH job scheduled "
-                    f"- {self.config_filename}"
+                    f"PID: {job_id} - SSH job scheduled " f"- {self.config_filename}"
                 )
             else:
                 self.logger.info(
@@ -198,7 +197,7 @@ class MLEJob(object):
             status_out = self.monitor_ssh(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"SSH PID: {job_id} - Cloud job "
+                    f"SSH PID: {job_id} - SSH job "
                     f"completed - {self.config_filename}"
                 )
         elif self.resource_to_run == "local":
@@ -325,12 +324,12 @@ class MLEJob(object):
         # Poll status of local process & change status when done
         if continuous:
             while self.job_status:
-                self.job_status = monitor_ssh(proc)
+                self.job_status = monitor_ssh(proc, self.ssh_settings)
                 # Sleep until next status check
                 time.sleep(1)
             return 0
         else:
-            return monitor_ssh(proc)
+            return monitor_ssh(proc, self.ssh_settings)
 
     def monitor_cluster(self, job_id: str, continuous: bool = True) -> int:
         """Monitors job remotely on SGE or Slurm clusters."""
@@ -362,7 +361,7 @@ class MLEJob(object):
 
     def clean_up(self, job_id: str) -> None:
         """Remove error and log files at end of training."""
-        if self.resource_to_run != "local":
+        if self.resource_to_run in cluster_resources:
             for filename in glob.glob(self.job_arguments["err_file"] + "*"):
                 try:
                     os.remove(filename)
@@ -380,10 +379,6 @@ class MLEJob(object):
             clean_up_gcp(job_id, self.job_arguments, self.experiment_dir)
             # Wait for download to wrap up!
             time.sleep(100)
-
-        # Delete log.txt file on remote machine
-        if self.resource_to_run == "ssh-node":
-            clean_up_ssh(self.ssh_settings)
 
     def generate_cmd_line_args(self) -> str:
         """Generate cmd line args for .py -> get_train_configs_ready"""

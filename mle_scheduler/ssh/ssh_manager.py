@@ -1,7 +1,15 @@
+import logging
 import paramiko
 from scp import SCPClient
 from sshtunnel import SSHTunnelForwarder
 from typing import List
+
+
+logger = logging.getLogger("paramiko")
+logger.setLevel(logging.ERROR)
+logger = logging.getLogger("sshtunnel")
+logger.propagate = False
+logger.disabled = True
 
 
 class SSH_Manager(object):
@@ -122,3 +130,8 @@ class SSH_Manager(object):
             ftp.close()
             client.close()
         return
+
+    def delete_dir(self, file_name: str):
+        """Delete a directory on the remote server."""
+        cmd = "rm -rf " + file_name
+        self.execute_command([cmd])
