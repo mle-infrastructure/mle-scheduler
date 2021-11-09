@@ -211,16 +211,20 @@ class MLEJob(object):
 
     def schedule_local(self):
         """Schedules job locally on your machine."""
-        if "use_conda_virtual_env" in self.job_arguments.keys():
-            if self.job_arguments["use_conda_virtual_env"]:
+        if "use_conda_venv" in self.job_arguments.keys():
+            if self.job_arguments["use_conda_venv"]:
                 proc = submit_conda(
                     self.job_filename, self.cmd_line_args, self.job_arguments
                 )
-        elif "use_venv_virtual_env" in self.job_arguments.keys():
-            if self.job_arguments["use_venv_virtual_env"]:
+            else:
+                proc = submit_local(self.job_filename, self.cmd_line_args)
+        elif "use_venv_venv" in self.job_arguments.keys():
+            if self.job_arguments["use_venv_venv"]:
                 proc = submit_venv(
                     self.job_filename, self.cmd_line_args, self.job_arguments
                 )
+            else:
+                proc = submit_local(self.job_filename, self.cmd_line_args)
         else:
             proc = submit_local(self.job_filename, self.cmd_line_args)
         self.job_status = 1

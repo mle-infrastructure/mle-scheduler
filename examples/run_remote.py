@@ -4,7 +4,7 @@ from mle_scheduler import MLEJob, MLEQueue
 def main(resource_to_run: str):
     job_args = {
         "env_name": "mle-toolbox",
-        "use_conda_virtual_env": True,
+        "use_conda_venv": True,
         "num_logical_cores": 1,
         "job_name": "test",
         "err_file": "job",

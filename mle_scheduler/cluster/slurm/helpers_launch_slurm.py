@@ -1,4 +1,9 @@
-from .startup_script_slurm import slurm_base_job_config, slurm_job_exec
+from .startup_script_slurm import (
+    slurm_base_job_config,
+    slurm_job_exec,
+    slurm_conda_activate,
+    slurm_venv_activate,
+)
 
 
 def slurm_generate_startup_file(job_arguments: dict) -> str:
@@ -24,5 +29,12 @@ def slurm_generate_startup_file(job_arguments: dict) -> str:
         base_template += "#SBATCH --mem={memory_per_job}\n"
 
     # Add the 'tail' - script execution to the string
-    template_out = base_template + slurm_job_exec
+    template_out = base_template
+    if "use_conda_venv" in job_arguments.keys():
+        if job_arguments["use_conda_venv"]:
+            template_out += slurm_conda_activate
+    elif "use_venv_venv" in job_arguments.keys():
+        if job_arguments["use_venv_venv"]:
+            template_out += slurm_venv_activate
+    template_out += slurm_job_exec
     return template_out

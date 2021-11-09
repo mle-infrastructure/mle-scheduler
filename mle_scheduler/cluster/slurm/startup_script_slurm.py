@@ -10,12 +10,23 @@ slurm_base_job_config = """#!/bin/bash
 """
 
 
-# Base template for executing .py script
-slurm_job_exec = """
-module load nvidia/cuda/10.0
+slurm_conda_activate = """
+echo "------------------------------------------------------------------------"
 source ~/miniconda3/etc/profile.d/conda.sh
 echo "------------------------------------------------------------------------"
 . ~/.bashrc && conda activate {env_name}
+echo "Successfully activated virtual environment - Ready to start job"
+"""
+
+slurm_venv_activate = """
+echo "------------------------------------------------------------------------"
+. ~/.bashrc && source {work_on_dir}/{env_name}/bin/activate
+echo "Successfully activated virtual environment - Ready to start job"
+"""
+
+# Base template for executing .py script
+slurm_job_exec = """
+module load nvidia/cuda/10.0
 echo "Successfully activated virtual environment - Ready to start job"
 echo "------------------------------------------------------------------------"
 echo "Job started on" `date`

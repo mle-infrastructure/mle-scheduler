@@ -65,9 +65,31 @@ def submit_ssh(
         )
 
     # Add conda environment activation
-    script_cmd = "echo $$; /bin/bash -c 'source $(conda info --base)/etc/profile.d/conda.sh && conda activate {} && cd {} && {}'".format(
-        job_arguments["env_name"], ssh_settings["remote_dir"], cmd
-    )
+    if "use_conda_venv" in job_arguments.keys():
+        if job_arguments["use_conda_venv"]:
+            script_cmd = "echo $$; /bin/bash -c 'source $(conda info --base)/etc/profile.d/conda.sh && conda activate {} && cd {} && {}'".format(
+                job_arguments["env_name"], ssh_settings["remote_dir"], cmd
+            )
+        else:
+            script_cmd = "echo $$; /bin/bash -c 'cd {} && {}'".format(
+                ssh_settings["remote_dir"], cmd
+            )
+    elif "use_conda_venv" in job_arguments.keys():
+        if job_arguments["use_venv_venv"]:
+            script_cmd = "echo $$; /bin/bash -c 'source {}/{}/bin/activate && {} && cd {} && {}'".format(
+                os.environ["WORKON_HOME"],
+                job_arguments["env_name"],
+                ssh_settings["remote_dir"],
+                cmd,
+            )
+        else:
+            script_cmd = "echo $$; /bin/bash -c 'cd {} && {}'".format(
+                ssh_settings["remote_dir"], cmd
+            )
+    else:
+        script_cmd = "echo $$; /bin/bash -c 'cd {} && {}'".format(
+            ssh_settings["remote_dir"], cmd
+        )
 
     # Create manager for file sync and subprocess exec
     ssh_manager = SSH_Manager(

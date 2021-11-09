@@ -32,6 +32,9 @@ def submit_slurm(
     job_arguments["script"] = script
     slurm_job_template = slurm_generate_startup_file(job_arguments)
 
+    if "use_venv_venv" in job_arguments.keys():
+        if job_arguments["use_venv_venv"]:
+            job_arguments["work_on_dir"] = os.environ["WORKON_HOME"]
     open(base + ".sh", "w").write(slurm_job_template.format(**job_arguments))
 
     # Submit the job via subprocess call

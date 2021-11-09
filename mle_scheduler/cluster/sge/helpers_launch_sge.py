@@ -1,4 +1,9 @@
-from .startup_script_sge import sge_base_job_config, sge_job_exec
+from .startup_script_sge import (
+    sge_base_job_config,
+    sge_job_exec,
+    sge_conda_activate,
+    sge_venv_activate,
+)
 
 
 def sge_generate_startup_file(job_arguments: dict) -> str:
@@ -43,5 +48,12 @@ def sge_generate_startup_file(job_arguments: dict) -> str:
     base_template += "#$ -terse\n"
 
     # Add the 'tail' - script execution to the string
-    template_out = base_template + sge_job_exec
+    template_out = base_template
+    if "use_conda_venv" in job_arguments.keys():
+        if job_arguments["use_conda_venv"]:
+            template_out += sge_conda_activate
+    elif "use_venv_venv" in job_arguments.keys():
+        if job_arguments["use_venv_venv"]:
+            template_out += sge_venv_activate
+    template_out += sge_job_exec
     return template_out

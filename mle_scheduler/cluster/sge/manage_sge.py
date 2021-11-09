@@ -32,6 +32,9 @@ def submit_sge(
     job_arguments["script"] = script
     sge_job_template = sge_generate_startup_file(job_arguments)
 
+    if "use_venv_venv" in job_arguments.keys():
+        if job_arguments["use_venv_venv"]:
+            job_arguments["work_on_dir"] = os.environ["WORKON_HOME"]
     open(base + ".qsub", "w").write(sge_job_template.format(**job_arguments))
 
     # Submit the job via subprocess call
