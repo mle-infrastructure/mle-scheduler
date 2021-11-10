@@ -1,11 +1,17 @@
 import os
 import logging
-from rich.logging import RichHandler
 import time
 import datetime
-from tqdm import tqdm
 from typing import Union, List
 import numpy as np
+from rich.logging import RichHandler
+from rich.progress import (
+    BarColumn,
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+    SpinnerColumn,
+)
 from .job import MLEJob
 from .ssh import send_dir_ssh, copy_dir_ssh, delete_dir_ssh
 from .cloud.gcp import send_dir_gcp, copy_dir_gcp, delete_dir_gcp
@@ -130,11 +136,10 @@ class MLEQueue(object):
         self.num_total_jobs = len(self.queue)
 
         self.logger.info(
-            "QUEUED - {} random seeds - {} configs".format(
+            "Queued - {} random seeds - {} configs".format(
                 self.num_seeds, len(self.config_filenames)
             )
         )
-        self.logger.info("TOTAL JOBS TO EXECUTE - {}".format(self.num_total_jobs))
 
     def run(self) -> None:
         """Schedule -> Monitor -> Merge individual logs."""
@@ -148,14 +153,26 @@ class MLEQueue(object):
             self.queue_counter += 1
             time.sleep(0.1)
         self.logger.info(
-            "LAUNCH - SET OF {}/{} JOBS".format(
+            "Launch - Set of {}/{} Jobs".format(
                 self.num_running_jobs, self.num_total_jobs
             )
         )
 
         # 2. Set up Progress Bar Counter of completed jobs (& slack bot)
-        self.pbar = tqdm(
-            total=self.num_total_jobs, bar_format="{l_bar}{bar:45}{r_bar}{bar:-45b}"
+        progress = Progress(
+            SpinnerColumn(),
+            TextColumn(
+                f"[bold blue]MLEQueue - {self.resource_to_run} •",
+                justify="left",
+            ),
+            TextColumn(
+                "{task.completed}/{task.total} Jobs",
+                justify="left",
+            ),
+            BarColumn(bar_width=30, style="magenta"),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}% •"),
+            TimeElapsedColumn(),
+            TextColumn(":hourglass:", justify="right"),
         )
 
         if self.slack_user_name is not None and self.slack_auth_token is not None:
@@ -184,47 +201,59 @@ class MLEQueue(object):
             slackbot.init_pbar(self.num_total_jobs, ts=self.slack_message_id)
 
         # 3. Monitor & launch new waiting jobs when resource available
-        while self.num_completed_jobs < self.num_total_jobs:
-            # Once budget is fully allocated - start monitor running jobs
-            # Loop over all jobs in queue - check status of prev running
-            for job in self.queue:
-                if job["status"] == 1:
-                    status = self.monitor(job["job"], job["job_id"], False)
-                    # If status changes to completed - update counters/state
-                    if status == 0:
-                        self.num_completed_jobs += 1
-                        self.num_running_jobs -= 1
-                        job["status"] = 0
-                        self.pbar.update(1)
-                        if (
-                            self.slack_user_name is not None
-                            and self.slack_auth_token is not None
-                        ):
-                            slackbot.update_pbar()
+        with progress:
+            task = progress.add_task("queue", total=self.num_total_jobs)
+            while self.num_completed_jobs < self.num_total_jobs:
+                # Once budget is fully allocated - start monitor running jobs
+                # Loop over all jobs in queue - check status of prev running
+                for job in self.queue:
+                    if job["status"] == 1:
+                        status = self.monitor(job["job"], job["job_id"], False)
+                        # If status changes to completed - update counters/state
+                        if status == 0:
+                            self.num_completed_jobs += 1
+                            self.num_running_jobs -= 1
+                            job["status"] = 0
+                            progress.advance(task)
+                            if (
+                                self.slack_user_name is not None
+                                and self.slack_auth_token is not None
+                            ):
+                                slackbot.update_pbar()
 
-                        # Merge seeds of one eval/config if all jobs done!
-                        completed_seeds = 0
-                        for other_job in self.queue:
-                            if other_job["config_fname"] == job["config_fname"]:
-                                if other_job["status"] == 0:
-                                    completed_seeds += 1
-                        if completed_seeds == self.num_seeds and self.automerge_seeds:
-                            self.merge_seeds(job["experiment_dir"], job["base_str"])
-                time.sleep(0.1)
+                            # Merge seeds of one eval/config if all jobs done!
+                            completed_seeds = 0
+                            for other_job in self.queue:
+                                if other_job["config_fname"] == job["config_fname"]:
+                                    if other_job["status"] == 0:
+                                        completed_seeds += 1
+                            if (
+                                completed_seeds == self.num_seeds
+                                and self.automerge_seeds
+                            ):
+                                self.merge_seeds(job["experiment_dir"], job["base_str"])
+                    time.sleep(0.1)
 
-            # Once budget becomes available again - fill up with new jobs
-            while self.num_running_jobs < min(
-                self.max_running_jobs,
-                self.num_total_jobs - self.num_completed_jobs - self.num_running_jobs,
-            ):
-                job, job_id = self.launch(self.queue_counter)
-                self.queue[self.queue_counter]["status"] = 1
-                self.queue[self.queue_counter]["job"] = job
-                self.queue[self.queue_counter]["job_id"] = job_id
-                self.num_running_jobs += 1
-                self.queue_counter += 1
-                time.sleep(0.1)
-        self.pbar.close()
+                # Once budget becomes available again - fill up with new jobs
+                while self.num_running_jobs < min(
+                    self.max_running_jobs,
+                    self.num_total_jobs
+                    - self.num_completed_jobs
+                    - self.num_running_jobs,
+                ):
+                    job, job_id = self.launch(self.queue_counter)
+                    self.queue[self.queue_counter]["status"] = 1
+                    self.queue[self.queue_counter]["job"] = job
+                    self.queue[self.queue_counter]["job_id"] = job_id
+                    self.num_running_jobs += 1
+                    self.queue_counter += 1
+                    time.sleep(0.1)
+
+        self.logger.info(
+            "Completed - Set of {}/{} Jobs".format(
+                self.num_total_jobs, self.num_total_jobs
+            )
+        )
 
         if self.resource_to_run == "ssh-node":
             copy_dir_ssh(
@@ -233,10 +262,14 @@ class MLEQueue(object):
                     self.ssh_settings["remote_dir"], self.experiment_dir
                 ),
             )
+            self.logger.info(f"Pulled SSH results - {self.experiment_dir}")
             # Clean up the scp code directory
             if "clean_up_remote_dir" in self.ssh_settings.keys():
                 if self.ssh_settings["clean_up_remote_dir"]:
                     delete_dir_ssh(self.ssh_settings)
+                    self.logger.info(
+                        f"Deleted SSH directory - {self.ssh_settings['remote_dr']}"
+                    )
 
         elif self.resource_to_run == "gcp-cloud":
             copy_dir_gcp(
@@ -245,10 +278,14 @@ class MLEQueue(object):
                     self.cloud_settings["remote_dir"], self.experiment_dir
                 ),
             )
+            self.logger.info(f"Pulled cloud results - {self.experiment_dir}")
             # Clean up the scp code directory
             if "clean_up_remote_dir" in self.cloud_settings.keys():
                 if self.cloud_settings["clean_up_remote_dir"]:
                     delete_dir_gcp(self.cloud_settings)
+                    self.logger.info(
+                        f"Deleted cloud directory - {self.ssh_settings['remote_dr']}"
+                    )
 
     def launch(self, queue_counter):
         """Launch a set of jobs for one configuration - one for each seed."""

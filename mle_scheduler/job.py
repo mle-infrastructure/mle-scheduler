@@ -80,7 +80,6 @@ class MLEJob(object):
 
         # Create command line arguments for job to schedule (passed to .py)
         self.cmd_line_args = self.generate_cmd_line_args()
-
         # Add additional cmd line args if extra ones are specified
         if extra_cmd_line_input is not None:
             self.cmd_line_args = self.generate_extra_cmd_line_args(
@@ -175,33 +174,44 @@ class MLEJob(object):
         If 'continuous' bool is true, then monitor until experiment status 0.
         """
         if self.resource_to_run in cluster_resources:
+            if continuous:
+                self.logger.info(
+                    f"Job ID: {job_id} - Start monitoring - {self.config_filename}"
+                )
             status_out = self.monitor_cluster(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"Job ID: {job_id} - "
-                    "Cluster job "
-                    f"completed - {self.config_filename}"
+                    f"Job ID: {job_id} - Cluster job completed - {self.config_filename}"
                 )
         elif self.resource_to_run in cloud_resources:
+            if continuous:
+                self.logger.info(
+                    f"VM Name: {job_id} - Start monitoring - {self.config_filename}"
+                )
             status_out = self.monitor_cloud(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"VM Name: {job_id} - Cloud job "
-                    f"completed - {self.config_filename}"
+                    f"VM Name: {job_id} - Cloud job completed - {self.config_filename}"
                 )
         elif self.resource_to_run == "ssh-node":
+            if continuous:
+                self.logger.info(
+                    f"SSH PID: {job_id} - Start monitoring - {self.config_filename}"
+                )
             status_out = self.monitor_ssh(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"SSH PID: {job_id} - SSH job "
-                    f"completed - {self.config_filename}"
+                    f"SSH PID: {job_id} - SSH job completed - {self.config_filename}"
                 )
         elif self.resource_to_run == "local":
+            if continuous:
+                self.logger.info(
+                    f"PID: {job_id.pid} - Start monitoring - {self.config_filename}"
+                )
             status_out = self.monitor_local(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"PID: {job_id.pid} - Local job "
-                    f"completed - { self.config_filename}"
+                    f"PID: {job_id.pid} - Local job completed - { self.config_filename}"
                 )
         return status_out
 
