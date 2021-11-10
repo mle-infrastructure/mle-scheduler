@@ -1,16 +1,11 @@
-from .manage_ssh import (
-    submit_ssh,
-    monitor_ssh,
-    clean_up_ssh,
-    copy_results_ssh,
-    send_code_ssh,
-)
+from .job_manage_ssh import submit_ssh, monitor_ssh
+from .file_manage_ssh import send_dir_ssh, copy_dir_ssh, delete_dir_ssh
 
 
 __all__ = [
     "submit_ssh",
     "monitor_ssh",
-    "clean_up_ssh",
-    "copy_results_ssh",
-    "send_code_ssh",
+    "send_dir_ssh",
+    "copy_dir_ssh",
+    "delete_dir_ssh",
 ]

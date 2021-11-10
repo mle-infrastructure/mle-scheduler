@@ -9,8 +9,8 @@ sge_base_job_config = """
 #$ -cwd
 #$ -V
 #$ -N {job_name}
-#$ -e {err_file}.err
-#$ -o {log_file}.txt
+#$ -e err.err
+#$ -o log.txt
 """
 
 sge_conda_activate = """

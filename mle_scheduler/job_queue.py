@@ -7,7 +7,8 @@ from tqdm import tqdm
 from typing import Union, List
 import numpy as np
 from .job import MLEJob
-from .ssh import send_code_ssh, copy_results_ssh, clean_up_ssh
+from .ssh import send_dir_ssh, copy_dir_ssh, delete_dir_ssh
+from .cloud.gcp import send_dir_gcp, copy_dir_gcp, delete_dir_gcp
 
 
 class MLEQueue(object):
@@ -55,7 +56,11 @@ class MLEQueue(object):
 
         if resource_to_run == "ssh-node":
             if self.ssh_settings["start_up_copy_dir"]:
-                send_code_ssh(self.ssh_settings)
+                send_dir_ssh(self.ssh_settings)
+
+        if resource_to_run == "gcp-cloud":
+            if self.cloud_settings["start_up_copy_dir"]:
+                send_dir_gcp(self.cloud_settings)
 
         # Instantiate/connect a logger
         FORMAT = "%(message)s"
@@ -222,7 +227,7 @@ class MLEQueue(object):
         self.pbar.close()
 
         if self.resource_to_run == "ssh-node":
-            copy_results_ssh(
+            copy_dir_ssh(
                 self.ssh_settings,
                 remote_dir=os.path.join(
                     self.ssh_settings["remote_dir"], self.experiment_dir
@@ -231,7 +236,19 @@ class MLEQueue(object):
             # Clean up the scp code directory
             if "clean_up_remote_dir" in self.ssh_settings.keys():
                 if self.ssh_settings["clean_up_remote_dir"]:
-                    clean_up_ssh(self.ssh_settings)
+                    delete_dir_ssh(self.ssh_settings)
+
+        elif self.resource_to_run == "gcp-cloud":
+            copy_dir_gcp(
+                self.cloud_settings,
+                remote_dir=os.path.join(
+                    self.cloud_settings["remote_dir"], self.experiment_dir
+                ),
+            )
+            # Clean up the scp code directory
+            if "clean_up_remote_dir" in self.cloud_settings.keys():
+                if self.cloud_settings["clean_up_remote_dir"]:
+                    delete_dir_gcp(self.cloud_settings)
 
     def launch(self, queue_counter):
         """Launch a set of jobs for one configuration - one for each seed."""

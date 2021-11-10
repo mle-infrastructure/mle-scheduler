@@ -68,4 +68,10 @@ pip install -e .
 
 ## Development & Milestones for Next Release
 
-You can run the test suite via `python -m pytest -vv tests/`. If you find a bug or are missing your favourite feature, feel free to contact me [@RobertTLange](https://twitter.com/RobertTLange) or create an issue :hugs:.
+You can run the test suite via `python -m pytest -vv tests/`. If you find a bug or are missing your favourite feature, feel free to contact me [@RobertTLange](https://twitter.com/RobertTLange) or create an issue :hugs:. In future releases I plan on implementing the following:
+
+- [ ] Clean up TPU GCP VM case
+- [ ] Add local launching of cluster jobs via SSH to headnode
+- [ ] Add Docker/Singularity container setup support
+- [ ] Add Azure support
+- [ ] Add AWS support

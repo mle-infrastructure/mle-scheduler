@@ -9,18 +9,14 @@ from .helpers_launch_gcp import (
     gcp_get_submission_cmd,
     gcp_delete_vm_instance,
 )
-from .file_management_gcp import delete_gcs_dir
 
 
 def submit_gcp(
     filename: str,
     cmd_line_arguments: str,
-    job_arguments: dict,
     experiment_dir: str,
-    gcp_code_dir: str,
-    gcp_results_dir: str,
-    gcp_bucket_name: str,
-    clean_up: bool = True,
+    job_arguments: dict,
+    cloud_settings: dict,
 ):
     """Create a GCP VM job & submit it based on provided file to execute."""
     # 0. Create VM Name - Timestamp + Random 4 digit id
@@ -32,21 +28,20 @@ def submit_gcp(
     # 1. Generate GCP startup file with provided arguments
     startup_fname = vm_name + "-startup.sh"
     if "extra_install_fname" in job_arguments.keys():
-        extra_install_fname = job_arguments.extra_install_fname
+        extra_install_fname = job_arguments["extra_install_fname"]
     else:
         extra_install_fname = None
 
     gcp_generate_startup_file(
-        gcp_code_dir,
-        gcp_results_dir,
-        gcp_bucket_name,
+        cloud_settings["remote_dir"],
+        cloud_settings["bucket_name"],
         filename,
         experiment_dir,
         startup_fname,
         cmd_line_arguments,
         extra_install_fname,
-        job_arguments.use_tpus,
-        job_arguments.num_gpus > 0,
+        job_arguments["use_tpus"],
+        job_arguments["num_gpus"] > 0,
     )
 
     # 2. Generate GCP submission command (`gcloud compute instance create ...`)
@@ -82,7 +77,6 @@ def submit_gcp(
 def monitor_gcp(vm_name: str, job_arguments: dict):
     """Monitor status of job based on vm_name. Requires stable connection."""
     # Check VM status from command line
-    use_tpu = job_arguments.use_tpus
     while True:
         try:
             check_cmd = (
@@ -96,7 +90,7 @@ def monitor_gcp(vm_name: str, job_arguments: dict):
                     "--verbosity",
                     "critical",
                 ]
-                if use_tpu
+                if job_arguments["use_tpus"]
                 else [
                     "gcloud",
                     "compute",
@@ -129,24 +123,8 @@ def clean_up_gcp(
     vm_name: str,
     job_arguments: dict,
     experiment_dir: str,
-    gcp_results_dir: str,
-    gcp_code_dir: str,
-    gcp_project_name: str,
-    gcp_bucket_name: str,
+    cloud_settings: dict,
 ):
     """Delete VM instance and code GCS directory."""
     # Delete GCP Job after it terminated (avoid storage billing)
-    gcp_delete_vm_instance(vm_name, job_arguments.use_tpus)
-
-    # Delete code dir in GCS bucket (only keep results of computation)
-    delete_gcs_dir(gcp_code_dir, gcp_project_name, gcp_bucket_name)
-
-    # Download results back to local directory
-    from .file_management_gcp import download_gcs_dir
-
-    download_gcs_dir(
-        gcs_path=os.path.join(gcp_results_dir, experiment_dir),
-        gcp_project_name=gcp_project_name,
-        gcp_bucket_name=gcp_bucket_name,
-        local_path="./" + experiment_dir,
-    )
+    gcp_delete_vm_instance(vm_name, job_arguments["use_tpus"])

@@ -3,8 +3,8 @@
 # Base sbatch template
 slurm_base_job_config = """#!/bin/bash
 #SBATCH --job-name={job_name}                   # job name (not id)
-#SBATCH --output={log_file}.txt                 # output file
-#SBATCH --error={err_file}.err                  # error file
+#SBATCH --output=log.txt                        # output file
+#SBATCH --error=err.err                         # error file
 #SBATCH --partition={partition}                 # partition to submit to
 #SBATCH --cpus-per-task={num_logical_cores}     # number of cpus
 """

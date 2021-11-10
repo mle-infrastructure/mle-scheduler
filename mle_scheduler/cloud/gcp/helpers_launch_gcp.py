@@ -16,17 +16,16 @@ from .startup_script_gcp import (
 
 
 cores_to_machine_type = {
-    1: "n2-highcpu-2",
-    2: "n2-highcpu-4",
-    4: "n2-highcpu-8",
-    8: "n2-highcpu-16",
-    16: "n2-highcpu-32",
-    24: "n2-highcpu-48",
-    32: "n2-highcpu-64",
-    40: "n2-highcpu-80",
+    1: "n1-highcpu-2",
+    2: "n1-highcpu-4",
+    4: "n1-highcpu-8",
+    8: "n1-highcpu-16",
+    16: "n1-highcpu-32",
+    32: "n1-highcpu-64",
+    48: "n1-highcpu-96",
 }
 
-gpu_types = [
+valid_gpu_types = [
     "nvidia-tesla-p100",
     "nvidia-tesla-v100",
     "nvidia-tesla-t4",
@@ -66,8 +65,9 @@ def gcp_get_submission_cmd(
         job_gcp_args = base_gcp_args
         # job_gcp_args.MACHINE_TYPE = cores_to_machine_type[
         #                                 job_args.num_logical_cores]
-        if job_args.num_gpus > 0:
-            job_gcp_args["ACCELERATOR_TYPE"] = "nvidia-tesla-v100"
+        if job_args["num_gpus"] > 0:
+            assert job_args["gpu_type"] in valid_gpu_types
+            job_gcp_args["ACCELERATOR_TYPE"] = job_args["gpu_type"]
             job_gcp_args["ACCELERATOR_COUNT"] = job_args["num_gpus"]
 
     if job_args["use_tpus"]:
@@ -100,7 +100,7 @@ def gcp_get_submission_cmd(
             "--preemptible",
             f"--zone={job_gcp_args['ZONE']}",
             f"--custom-cpu={2*job_args['num_logical_cores']}",
-            f"--custom-memory={2048*job_args['num_logical_cores']}MB",
+            f"--custom-memory={4096 + 2048*job_args['num_logical_cores']}MB",
             "--custom-vm-type=n1",
             f"--image={job_gcp_args['IMAGE_NAME']}",
             f"--image-project={job_gcp_args['IMAGE_PROJECT']}",
@@ -130,7 +130,6 @@ def gcp_get_submission_cmd(
 
 def gcp_generate_startup_file(
     remote_code_dir: str,
-    remote_results_dir: str,
     gcp_bucket_name: str,
     job_filename: str,
     experiment_dir: str,
@@ -189,7 +188,6 @@ def gcp_generate_startup_file(
 
     startup_script_content += sync_results_from_dir.format(
         remote_code_dir=remote_code_dir,
-        remote_results_dir=remote_results_dir,
         gcp_bucket_name=gcp_bucket_name,
         experiment_dir=experiment_dir,
     )

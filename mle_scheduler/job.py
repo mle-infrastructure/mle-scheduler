@@ -76,10 +76,6 @@ class MLEJob(object):
         self.job_arguments = job_arguments.copy()  # Job resource configuration
         self.experiment_dir = experiment_dir  # main results dir (create)
         self.seed_id = seed_id  # random seed to be passed as cmd-line arg
-        if self.experiment_dir is not None:
-            if not os.path.exists(self.experiment_dir):
-                os.makedirs(self.experiment_dir)
-
         self.user_name = getpass.getuser()
 
         # Create command line arguments for job to schedule (passed to .py)
@@ -265,29 +261,13 @@ class MLEJob(object):
     def schedule_cloud(self) -> int:
         """Schedules job to run remotely on GCP cloud."""
         if self.resource_to_run == "gcp-cloud":
-            # Import utility to copy local code directory to GCS bucket
-            from .cloud.gcp.file_management_gcp import upload_local_dir_to_gcs
-
-            # Send config file to remote machine - independent of code base!
-            upload_local_dir_to_gcs(
-                local_path=self.config_filename,
-                gcs_path=os.path.join(
-                    self.cloud_settings["code_dir"], self.config_filename
-                ),
-                gcp_project_name=self.cloud_settings["project_name"],
-                gcp_bucket_name=self.cloud_settings["bucket_name"],
-            )
-
             # Submit VM Creation + Startup exec
             job_id = submit_gcp(
                 self.job_filename,
                 self.cmd_line_args,
-                self.job_arguments,
                 self.experiment_dir,
-                self.cloud_settings["code_dir"],
-                self.cloud_settings["results_dir"],
-                self.cloud_settings["bucket_name"],
-                clean_up=True,
+                self.job_arguments,
+                self.cloud_settings,
             )
         if job_id == -1:
             self.job_status = 0
@@ -380,7 +360,9 @@ class MLEJob(object):
 
         # Delete VM instance and code directory stored in data bucket
         if self.resource_to_run == "gcp-cloud":
-            clean_up_gcp(job_id, self.job_arguments, self.experiment_dir)
+            clean_up_gcp(
+                job_id, self.job_arguments, self.experiment_dir, self.cloud_settings
+            )
             # Wait for download to wrap up!
             time.sleep(100)
 

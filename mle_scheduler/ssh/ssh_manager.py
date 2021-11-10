@@ -9,7 +9,7 @@ logger = logging.getLogger("paramiko")
 logger.setLevel(logging.ERROR)
 logger = logging.getLogger("sshtunnel")
 logger.propagate = False
-logger.disabled = True
+logger.setLevel(logging.CRITICAL + 1)
 
 
 class SSH_Manager(object):

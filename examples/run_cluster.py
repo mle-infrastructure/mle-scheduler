@@ -2,14 +2,15 @@ from mle_scheduler import MLEJob, MLEQueue
 
 
 def main(resource_to_run: str):
+    # To execute this script you need to be on the head node of a slurm/grid engine cluster
     job_args = {
         "env_name": "mle-toolbox",
         "use_conda_venv": True,
         "num_logical_cores": 1,
         "job_name": "test",
-        "err_file": "job",
-        "log_file": "job",
     }
+
+    # Change these to a queue (grid engine)/partition (slurm) that works for you
     if resource_to_run == "sge-cluster":
         job_args["queue"] = "cognition-all.q"
     elif resource_to_run == "slurm-cluster":

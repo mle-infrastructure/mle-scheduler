@@ -1,12 +1,6 @@
-logs_ssh_queue
-logs_ssh_single
 eval_0.yaml
 eval_1.yaml
-logs_single
-logs_queue
-logs_merge
-logs_search
-logs_ssh
+logs_*
 old.py
 *.gif
 *.zip
