@@ -46,6 +46,10 @@ def submit_sge(
         sge_time = hours_sge + ":" + minutes + ":00"
         job_arguments["time_per_job"] = sge_time
 
+    # Add job name if not given in arguments
+    if "job_name" not in job_arguments:
+        job_arguments["job_name"] = "job"
+
     # Write grid engine scheduling script to qsub file
     open(base + ".qsub", "w").write(sge_job_template.format(**job_arguments))
 

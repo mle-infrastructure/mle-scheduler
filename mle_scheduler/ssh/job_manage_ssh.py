@@ -2,6 +2,7 @@ import os
 import time
 from typing import Union
 from .ssh_manager import SSH_Manager
+from .helpers_launch_ssh import ssh_get_submission_cmd
 
 
 def submit_ssh(
@@ -11,47 +12,10 @@ def submit_ssh(
     ssh_settings: dict,
 ):
     """Launch a job on an SSH server."""
-    if cmd_line_arguments is None:
-        cmd_line_arguments = ""
-    # Write the desired python/bash execution to slurm job submission file
-    f_name, f_extension = os.path.splitext(filename)
-    if f_extension == ".py":
-        cmd = f"python {filename} {cmd_line_arguments}"
-    elif f_extension == ".sh":
-        cmd = f"bash {filename} {cmd_line_arguments}"
-    else:
-        raise ValueError(
-            f"Script with {f_extension} cannot be handled"
-            " by mle-toolbox. Only base .py, .sh experiments"
-            " are so far implemented. Please open an issue."
-        )
-
-    # Add conda environment activation
-    if "use_conda_venv" in job_arguments.keys():
-        if job_arguments["use_conda_venv"]:
-            script_cmd = "echo $$; /bin/bash -c 'source $(conda info --base)/etc/profile.d/conda.sh && conda activate {} && cd {} && {}'".format(
-                job_arguments["env_name"], ssh_settings["remote_dir"], cmd
-            )
-        else:
-            script_cmd = "echo $$; /bin/bash -c 'cd {} && {}'".format(
-                ssh_settings["remote_dir"], cmd
-            )
-    elif "use_conda_venv" in job_arguments.keys():
-        if job_arguments["use_venv_venv"]:
-            script_cmd = "echo $$; /bin/bash -c 'source {}/{}/bin/activate && {} && cd {} && {}'".format(
-                os.environ["WORKON_HOME"],
-                job_arguments["env_name"],
-                ssh_settings["remote_dir"],
-                cmd,
-            )
-        else:
-            script_cmd = "echo $$; /bin/bash -c 'cd {} && {}'".format(
-                ssh_settings["remote_dir"], cmd
-            )
-    else:
-        script_cmd = "echo $$; /bin/bash -c 'cd {} && {}'".format(
-            ssh_settings["remote_dir"], cmd
-        )
+    # Create bash script string
+    script_cmd = ssh_get_submission_cmd(
+        filename, cmd_line_arguments, job_arguments, ssh_settings
+    )
 
     # Create manager for file sync and subprocess exec
     ssh_manager = SSH_Manager(

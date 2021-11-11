@@ -333,5 +333,5 @@ class MLEQueue(object):
         # Otherwise .hdf5 file system is not used and there is nothing to merge
         filename, file_extension = os.path.splitext(self.job_filename)
         if file_extension == ".py":
-            merged_path = os.path.join(experiment_dir, "logs", base_str + ".hdf5")
+            merged_path = os.path.join(experiment_dir, "logs", "log.hdf5")
             merge_seed_logs(merged_path, experiment_dir, self.num_seeds)

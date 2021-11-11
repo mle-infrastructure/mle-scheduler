@@ -43,6 +43,10 @@ def submit_slurm(
         slurm_time = days[1] + "-" + hours + ":" + minutes
         job_arguments["time_per_job"] = slurm_time
 
+    # Add job name if not given in arguments
+    if "job_name" not in job_arguments:
+        job_arguments["job_name"] = "job"
+
     # Write slurm scheduling script to bash file
     open(base + ".sh", "w").write(slurm_job_template.format(**job_arguments))
 

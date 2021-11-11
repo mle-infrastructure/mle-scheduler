@@ -42,11 +42,45 @@ def test_queue():
 
     # Check existence of expected files
     date = datetime.datetime.today().strftime("%Y-%m-%d")[2:]
-    assert os.path.exists(os.path.join("logs_queue", date + "_base_config_1"))
-    assert os.path.exists(os.path.join("logs_queue", date + "_base_config_2"))
+    assert os.path.exists(
+        os.path.join("logs_queue", date + "_base_config_1/logs/log_seed_0.hdf5")
+    )
+    assert os.path.exists(
+        os.path.join("logs_queue", date + "_base_config_1/logs/log_seed_1.hdf5")
+    )
+
+    assert os.path.exists(
+        os.path.join("logs_queue", date + "_base_config_2/logs/log_seed_0.hdf5")
+    )
+    assert os.path.exists(
+        os.path.join("logs_queue", date + "_base_config_2/logs/log_seed_1.hdf5")
+    )
+
     shutil.rmtree("logs_queue")
     return
 
 
 def test_automerge():
+    # Launch a queue of 4 jobs (2 configs x 2 seeds)
+    queue = MLEQueue(
+        resource_to_run="local",
+        job_filename="examples/train.py",
+        config_filenames=["examples/base_config_1.yaml", "examples/base_config_2.yaml"],
+        num_seeds=2,
+        random_seeds=[0, 1],
+        experiment_dir="logs_merge",
+        job_arguments={},
+        automerge_seeds=True,
+    )
+    queue.run()
+
+    # Check existence of expected files
+    date = datetime.datetime.today().strftime("%Y-%m-%d")[2:]
+    assert os.path.exists(
+        os.path.join("logs_merge", date + "_base_config_1/logs/log.hdf5")
+    )
+    assert os.path.exists(
+        os.path.join("logs_merge", date + "_base_config_2/logs/log.hdf5")
+    )
+    shutil.rmtree("logs_merge")
     return

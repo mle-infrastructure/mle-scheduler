@@ -2,11 +2,11 @@
 
 # Base sbatch template
 slurm_base_job_config = """#!/bin/bash
-#SBATCH --job-name={job_name}                   # job name (not id)
-#SBATCH --output=log.txt                        # output file
-#SBATCH --error=err.err                         # error file
-#SBATCH --partition={partition}                 # partition to submit to
-#SBATCH --cpus-per-task={num_logical_cores}     # number of cpus
+#SBATCH --job-name={job_name}
+#SBATCH --output=log.txt
+#SBATCH --error=err.err
+#SBATCH --partition={partition}
+#SBATCH --cpus-per-task={num_logical_cores}
 """
 
 
@@ -26,7 +26,6 @@ echo "Successfully activated virtual environment - Ready to start job"
 
 # Base template for executing .py script
 slurm_job_exec = """
-echo "Successfully activated virtual environment - Ready to start job"
 echo "------------------------------------------------------------------------"
 echo "Job started on" `date`
 echo "------------------------------------------------------------------------"

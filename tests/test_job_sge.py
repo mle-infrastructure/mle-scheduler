@@ -4,11 +4,11 @@ job_arguments = {
     "num_logical_cores": 5,
     "queue": "test_queue",
     "job_name": "test_job",
-    "err_file": "job",
-    "log_file": "job",
     "num_gpus": 1,
     "gpu_type": "RTX2080",
+    "gpu_prefix": "cuda",
     "env_name": "test_env",
+    "use_conda_venv": True,
     "script": "python run.py",
     "exclude_nodes": ["temp.tu-berlin.de"],
     "memory_per_job": 2000,
@@ -23,8 +23,8 @@ job_script = """
 #$ -cwd
 #$ -V
 #$ -N test_job
-#$ -e job.err
-#$ -o job.txt
+#$ -e err.err
+#$ -o log.txt
 #$ -l cuda="1",gputype="RTX2080"
 #$ -l hostname=!temp.tu-berlin.de
 #$ -l h_vmem=2000M
@@ -36,6 +36,7 @@ job_script = """
 echo "------------------------------------------------------------------------"
 . ~/.bashrc && conda activate test_env
 echo "Successfully activated virtual environment - Ready to start job"
+
 echo "------------------------------------------------------------------------"
 echo "Job started on" `date`
 echo "------------------------------------------------------------------------"

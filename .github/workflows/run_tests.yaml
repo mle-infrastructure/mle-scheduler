@@ -36,4 +36,4 @@ jobs:
         flake8 ./mle_scheduler --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Run unit/integration tests
       run: |
-        # pytest -vv --durations=0
+        pytest -vv --durations=0

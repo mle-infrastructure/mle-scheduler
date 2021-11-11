@@ -14,12 +14,14 @@ sge_base_job_config = """
 """
 
 sge_conda_activate = """
+#####################################
 echo "------------------------------------------------------------------------"
 . ~/.bashrc && conda activate {env_name}
 echo "Successfully activated virtual environment - Ready to start job"
 """
 
 sge_venv_activate = """
+#####################################
 echo "------------------------------------------------------------------------"
 . ~/.bashrc && source {work_on_dir}/{env_name}/bin/activate
 echo "Successfully activated virtual environment - Ready to start job"
@@ -27,7 +29,6 @@ echo "Successfully activated virtual environment - Ready to start job"
 
 # Base template for executing .py script
 sge_job_exec = """
-#####################################
 echo "------------------------------------------------------------------------"
 echo "Job started on" `date`
 echo "------------------------------------------------------------------------"
