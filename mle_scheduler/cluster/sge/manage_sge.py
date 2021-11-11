@@ -32,9 +32,21 @@ def submit_sge(
     job_arguments["script"] = script
     sge_job_template = sge_generate_startup_file(job_arguments)
 
+    # Add path for virtualenv activation
     if "use_venv_venv" in job_arguments.keys():
         if job_arguments["use_venv_venv"]:
             job_arguments["work_on_dir"] = os.environ["WORKON_HOME"]
+
+    # Reformatting of time for SGE qsub - hh:mm:ss but in is dd:hh:mm
+    if "time_per_job" in job_arguments.keys():
+        days, hours, minutes = job_arguments["time_per_job"].split(":")
+        hours_sge = str(int(days) * 24 + int(hours))
+        if len(hours_sge) < 2:
+            hours_sge = "0" + hours_sge
+        sge_time = hours_sge + ":" + minutes + ":00"
+        job_arguments["time_per_job"] = sge_time
+
+    # Write grid engine scheduling script to qsub file
     open(base + ".qsub", "w").write(sge_job_template.format(**job_arguments))
 
     # Submit the job via subprocess call

@@ -1,2 +1,2 @@
-def test_job():
+def test_job_gcp():
     return

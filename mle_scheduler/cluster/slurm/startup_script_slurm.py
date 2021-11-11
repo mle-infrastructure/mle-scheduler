@@ -26,7 +26,6 @@ echo "Successfully activated virtual environment - Ready to start job"
 
 # Base template for executing .py script
 slurm_job_exec = """
-module load nvidia/cuda/10.0
 echo "Successfully activated virtual environment - Ready to start job"
 echo "------------------------------------------------------------------------"
 echo "Job started on" `date`

@@ -30,11 +30,19 @@ def slurm_generate_startup_file(job_arguments: dict) -> str:
 
     # Add the 'tail' - script execution to the string
     template_out = base_template
-    if "use_conda_venv" in job_arguments.keys():
+    if "use_conda_venv" in job_arguments:
         if job_arguments["use_conda_venv"]:
             template_out += slurm_conda_activate
-    elif "use_venv_venv" in job_arguments.keys():
+    elif "use_venv_venv" in job_arguments:
         if job_arguments["use_venv_venv"]:
             template_out += slurm_venv_activate
+
+    # Add optional modules to load (e.g. CUDA, etc.)
+    if "modules_to_load" in job_arguments:
+        if type(job_arguments["modules_to_load"]) == str:
+            template_out += f"\nmodule load {job_arguments['modules_to_load']}"
+        elif type(job_arguments["modules_to_load"]) == list:
+            for mod in job_arguments["modules_to_load"]:
+                template_out += f"\nmodule load {job_arguments['mod']}"
     template_out += slurm_job_exec
     return template_out

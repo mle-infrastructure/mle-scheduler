@@ -10,7 +10,7 @@ job_arguments = {
     "gpu_type": "RTX2080",
     "env_name": "test_env",
     "script": "python run.py",
-    "exclude_nodes": ["cognition13.ml.tu-berlin.de"],
+    "exclude_nodes": ["temp.tu-berlin.de"],
     "memory_per_job": 2000,
     "time_per_job": "10:05:02",
 }
@@ -26,7 +26,7 @@ job_script = """
 #$ -e job.err
 #$ -o job.txt
 #$ -l cuda="1",gputype="RTX2080"
-#$ -l hostname=!cognition13.ml.tu-berlin.de
+#$ -l hostname=!temp.tu-berlin.de
 #$ -l h_vmem=2000M
 #$ -l mem_free=2000M
 #$ -l h_rt=10:05:02

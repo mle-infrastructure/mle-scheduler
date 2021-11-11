@@ -32,9 +32,18 @@ def submit_slurm(
     job_arguments["script"] = script
     slurm_job_template = slurm_generate_startup_file(job_arguments)
 
-    if "use_venv_venv" in job_arguments.keys():
+    # Add path for virtualenv activation
+    if "use_venv_venv" in job_arguments:
         if job_arguments["use_venv_venv"]:
             job_arguments["work_on_dir"] = os.environ["WORKON_HOME"]
+
+    # Reformatting of time for Slurm SBASH - d-hh:mm but in is dd:hh:mm
+    if "time_per_job" in job_arguments:
+        days, hours, minutes = job_arguments["time_per_job"].split(":")
+        slurm_time = days[1] + "-" + hours + ":" + minutes
+        job_arguments["time_per_job"] = slurm_time
+
+    # Write slurm scheduling script to bash file
     open(base + ".sh", "w").write(slurm_job_template.format(**job_arguments))
 
     # Submit the job via subprocess call

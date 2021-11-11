@@ -14,7 +14,7 @@ def sge_generate_startup_file(job_arguments: dict) -> str:
     # Add desired number of requested gpus
     if "num_gpus" in job_arguments:
         if job_arguments["num_gpus"] > 0:
-            base_template += '#$ -l cuda="{num_gpus}"'
+            base_template += '#$ -l {gpu_prefix}="{num_gpus}"'
         if "gpu_type" in job_arguments.keys():
             base_template += ',gputype="{gpu_type}"'
         base_template += "\n"

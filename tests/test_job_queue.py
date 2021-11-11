@@ -3,7 +3,7 @@ import shutil
 import datetime
 from mle_scheduler import MLEJob, MLEQueue
 
-# Only test this locally! For remote - have to run `run_remote.py` manually
+# Only test this locally! For remote - have to run example `run_XXX.py` manually
 
 
 def test_job():
@@ -45,4 +45,8 @@ def test_queue():
     assert os.path.exists(os.path.join("logs_queue", date + "_base_config_1"))
     assert os.path.exists(os.path.join("logs_queue", date + "_base_config_2"))
     shutil.rmtree("logs_queue")
+    return
+
+
+def test_automerge():
     return

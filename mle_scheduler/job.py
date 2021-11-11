@@ -60,9 +60,9 @@ class MLEJob(object):
         self,
         resource_to_run: str,
         job_filename: str,
-        config_filename: Union[None, str],
         job_arguments: dict = {},
-        experiment_dir: Union[None, str] = "experiments/",
+        config_filename: Union[None, str] = None,
+        experiment_dir: Union[None, str] = None,
         seed_id: Union[None, int] = None,
         extra_cmd_line_input: Union[None, dict] = None,
         cloud_settings: Union[dict, None] = None,
@@ -176,7 +176,7 @@ class MLEJob(object):
         if self.resource_to_run in cluster_resources:
             if continuous:
                 self.logger.info(
-                    f"Job ID: {job_id} - Start monitoring - {self.config_filename}"
+                    f"Job ID: {job_id} - Started monitoring - {self.config_filename}"
                 )
             status_out = self.monitor_cluster(job_id, continuous)
             if status_out == 0:
@@ -186,7 +186,7 @@ class MLEJob(object):
         elif self.resource_to_run in cloud_resources:
             if continuous:
                 self.logger.info(
-                    f"VM Name: {job_id} - Start monitoring - {self.config_filename}"
+                    f"VM Name: {job_id} - Started monitoring - {self.config_filename}"
                 )
             status_out = self.monitor_cloud(job_id, continuous)
             if status_out == 0:
@@ -196,7 +196,7 @@ class MLEJob(object):
         elif self.resource_to_run == "ssh-node":
             if continuous:
                 self.logger.info(
-                    f"SSH PID: {job_id} - Start monitoring - {self.config_filename}"
+                    f"SSH PID: {job_id} - Started monitoring - {self.config_filename}"
                 )
             status_out = self.monitor_ssh(job_id, continuous)
             if status_out == 0:
@@ -206,7 +206,7 @@ class MLEJob(object):
         elif self.resource_to_run == "local":
             if continuous:
                 self.logger.info(
-                    f"PID: {job_id.pid} - Start monitoring - {self.config_filename}"
+                    f"PID: {job_id.pid} - Started monitoring - {self.config_filename}"
                 )
             status_out = self.monitor_local(job_id, continuous)
             if status_out == 0:
@@ -373,8 +373,9 @@ class MLEJob(object):
             clean_up_gcp(
                 job_id, self.job_arguments, self.experiment_dir, self.cloud_settings
             )
-            # Wait for download to wrap up!
-            time.sleep(100)
+            self.logger.info(
+                f"VM Name: {job_id} - Shut down VM - {self.config_filename}"
+            )
 
     def generate_cmd_line_args(self) -> str:
         """Generate cmd line args for .py -> get_train_configs_ready"""
