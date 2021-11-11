@@ -1,8 +1,9 @@
+import logging
 from mle_scheduler import MLEJob, MLEQueue
 from mle_scheduler.cloud.gcp import send_dir_gcp, copy_dir_gcp, delete_dir_gcp
 
 
-def main(resource_to_run: str):
+def main():
     cloud_settings = {
         "project_name": "mle-toolbox",
         "bucket_name": "mle-protocol",
@@ -49,5 +50,10 @@ def main(resource_to_run: str):
         experiment_dir="logs_gcp_queue",
         job_arguments=job_args,
         cloud_settings=cloud_settings,
+        logger_level=logging.INFO,
     )
     queue.run()
+
+
+if __name__ == "__main__":
+    main()

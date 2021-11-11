@@ -60,14 +60,6 @@ class MLEQueue(object):
         self.cloud_settings = cloud_settings
         self.ssh_settings = ssh_settings
 
-        if resource_to_run == "ssh-node":
-            if self.ssh_settings["start_up_copy_dir"]:
-                send_dir_ssh(self.ssh_settings)
-
-        if resource_to_run == "gcp-cloud":
-            if self.cloud_settings["start_up_copy_dir"]:
-                send_dir_gcp(self.cloud_settings)
-
         # Instantiate/connect a logger
         FORMAT = "%(message)s"
         logging.basicConfig(
@@ -76,6 +68,16 @@ class MLEQueue(object):
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logger_level)
+
+        if resource_to_run == "ssh-node":
+            if self.ssh_settings["start_up_copy_dir"]:
+                send_dir_ssh(self.ssh_settings)
+                self.logger.info("Copied code directory to SSH server")
+
+        if resource_to_run == "gcp-cloud":
+            if self.cloud_settings["start_up_copy_dir"]:
+                send_dir_gcp(self.cloud_settings)
+                self.logger.info("Copied code directory to GCS bucket")
 
         # Check whether enough seeds explicitly supplied
         if random_seeds is not None:
@@ -136,8 +138,8 @@ class MLEQueue(object):
         self.num_total_jobs = len(self.queue)
 
         self.logger.info(
-            "Queued - {} random seeds - {} configs".format(
-                self.num_seeds, len(self.config_filenames)
+            "Queued: {} - {} seeds x {} configs".format(
+                self.resource_to_run, self.num_seeds, len(self.config_filenames)
             )
         )
 
@@ -152,9 +154,10 @@ class MLEQueue(object):
             self.num_running_jobs += 1
             self.queue_counter += 1
             time.sleep(0.1)
+
         self.logger.info(
-            "Launch - Set of {}/{} Jobs".format(
-                self.num_running_jobs, self.num_total_jobs
+            "Launched: {} - Set of {}/{} Jobs".format(
+                self.resource_to_run, self.num_running_jobs, self.num_total_jobs
             )
         )
 
@@ -214,24 +217,16 @@ class MLEQueue(object):
                             self.num_completed_jobs += 1
                             self.num_running_jobs -= 1
                             job["status"] = 0
+                            # Clean up after job completion (e.g VM instance)
+                            if self.resource_to_run == "gcp-cloud":
+                                job["job"].clean_up(job["job_id"])
+                            # Update the rich progress bar after job completed
                             progress.advance(task)
                             if (
                                 self.slack_user_name is not None
                                 and self.slack_auth_token is not None
                             ):
                                 slackbot.update_pbar()
-
-                            # Merge seeds of one eval/config if all jobs done!
-                            completed_seeds = 0
-                            for other_job in self.queue:
-                                if other_job["config_fname"] == job["config_fname"]:
-                                    if other_job["status"] == 0:
-                                        completed_seeds += 1
-                            if (
-                                completed_seeds == self.num_seeds
-                                and self.automerge_seeds
-                            ):
-                                self.merge_seeds(job["experiment_dir"], job["base_str"])
                     time.sleep(0.1)
 
                 # Once budget becomes available again - fill up with new jobs
@@ -250,8 +245,8 @@ class MLEQueue(object):
                     time.sleep(0.1)
 
         self.logger.info(
-            "Completed - Set of {}/{} Jobs".format(
-                self.num_total_jobs, self.num_total_jobs
+            "Completed: {} - {}/{} Jobs".format(
+                self.resource_to_run, self.num_total_jobs, self.num_total_jobs
             )
         )
 
@@ -268,7 +263,7 @@ class MLEQueue(object):
                 if self.ssh_settings["clean_up_remote_dir"]:
                     delete_dir_ssh(self.ssh_settings)
                     self.logger.info(
-                        f"Deleted SSH directory - {self.ssh_settings['remote_dr']}"
+                        f"Deleted SSH directory - {self.ssh_settings['remote_dir']}"
                     )
 
         elif self.resource_to_run == "gcp-cloud":
@@ -284,8 +279,17 @@ class MLEQueue(object):
                 if self.cloud_settings["clean_up_remote_dir"]:
                     delete_dir_gcp(self.cloud_settings)
                     self.logger.info(
-                        f"Deleted cloud directory - {self.ssh_settings['remote_dr']}"
+                        f"Deleted cloud directory - {self.cloud_settings['remote_dir']}"
                     )
+
+        # Merge seeds of one eval/config if all jobs done!
+        if self.automerge_seeds:
+            merged_dirs = []
+            for job in self.queue:
+                if job["experiment_dir"] not in merged_dirs:
+                    self.merge_seeds(job["experiment_dir"])
+                    merged_dirs.append(job["experiment_dir"])
+            self.logger.info(f"Merged seeds for log directories - {merged_dirs}")
 
     def launch(self, queue_counter):
         """Launch a set of jobs for one configuration - one for each seed."""
@@ -319,7 +323,7 @@ class MLEQueue(object):
             status = job.monitor(job_id, False)
             return status
 
-    def merge_seeds(self, experiment_dir: str, base_str: str) -> None:
+    def merge_seeds(self, experiment_dir: str) -> None:
         """Collect all seed-specific seeds into single <eval_id>.hdf5 file."""
         try:
             from mle_logging import merge_seed_logs

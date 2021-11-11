@@ -356,12 +356,12 @@ class MLEJob(object):
     def clean_up(self, job_id: str) -> None:
         """Remove error and log files at end of training."""
         if self.resource_to_run in cluster_resources:
-            for filename in glob.glob(self.job_arguments["err_file"] + "*"):
+            for filename in glob.glob("err.err"):
                 try:
                     os.remove(filename)
                 except Exception:
                     pass
-            for filename in glob.glob(self.job_arguments["log_file"] + "*"):
+            for filename in glob.glob("log.txt"):
                 try:
                     os.remove(filename)
                 except Exception:
@@ -373,9 +373,7 @@ class MLEJob(object):
             clean_up_gcp(
                 job_id, self.job_arguments, self.experiment_dir, self.cloud_settings
             )
-            self.logger.info(
-                f"VM Name: {job_id} - Shut down VM - {self.config_filename}"
-            )
+            self.logger.info(f"VM Name: {job_id} - Delete VM - {self.config_filename}")
 
     def generate_cmd_line_args(self) -> str:
         """Generate cmd line args for .py -> get_train_configs_ready"""

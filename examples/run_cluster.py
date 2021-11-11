@@ -8,13 +8,17 @@ def main(resource_to_run: str):
         "use_conda_venv": True,
         "num_logical_cores": 1,
         "job_name": "test",
+        "num_gpus": 1,
     }
 
     # Change these to a queue (grid engine)/partition (slurm) that works for you
     if resource_to_run == "sge-cluster":
-        job_args["queue"] = "cognition-all.q"
+        job_args["queue"] = "cognition-all.q"  # Replace with your GE queue
+        job_args["gpu_prefix"] = "cuda"
+        job_args["gpu_type"] = "RTX2080"
     elif resource_to_run == "slurm-cluster":
-        job_args["partition"] = "standard"
+        job_args["partition"] = "ex_scioi_gpu"  # Replace with your slurm partition
+        job_args["gpu_type"] = "v100s"
 
     # Launch a python train_mnist.py -config base_config.json job
     job = MLEJob(

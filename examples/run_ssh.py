@@ -1,15 +1,18 @@
+import os
 import logging
 from mle_scheduler import MLEJob, MLEQueue
 from mle_scheduler.ssh import send_dir_ssh, copy_dir_ssh, delete_dir_ssh
 
 
-def main(resource_to_run: str):
+def main():
     job_args = {"env_name": "mle-toolbox", "use_conda_venv": True}
 
     ssh_settings = {
-        "user_name": "RobTLange",
-        "pkey_path": "~.ssh/id_rsa",
-        "main_server": "cluster.ml.tu-berlin.de",
+        "user_name": os.environ["SSH_USER_NAME"],  # Replace with your user name
+        "pkey_path": os.environ[
+            "PKEY_PATH"
+        ],  # Replace with private key path (e.g. "~.ssh/id_rsa")
+        "main_server": os.environ["SSH_SERVER"],
         "jump_server": "",
         "ssh_port": 22,
         "remote_dir": "mle-code-dir",
@@ -47,6 +50,11 @@ def main(resource_to_run: str):
         experiment_dir="logs_ssh_queue",
         job_arguments=job_args,
         ssh_settings=ssh_settings,
+        logger_level=logging.INFO,
     )
 
     queue.run()
+
+
+if __name__ == "__main__":
+    main()
