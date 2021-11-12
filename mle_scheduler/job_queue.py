@@ -12,9 +12,9 @@ from rich.progress import (
     TimeElapsedColumn,
     SpinnerColumn,
 )
-from .job import MLEJob
-from .ssh import send_dir_ssh, copy_dir_ssh, delete_dir_ssh
-from .cloud.gcp import send_dir_gcp, copy_dir_gcp, delete_dir_gcp
+from mle_scheduler.job import MLEJob
+from mle_scheduler.ssh import send_dir_ssh, copy_dir_ssh, delete_dir_ssh
+from mle_scheduler.cloud.gcp import send_dir_gcp, copy_dir_gcp, delete_dir_gcp
 
 
 class MLEQueue(object):

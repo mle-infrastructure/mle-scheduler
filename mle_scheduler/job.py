@@ -5,11 +5,11 @@ import logging
 from rich.logging import RichHandler
 import getpass
 from typing import Union
-from .local import submit_local, submit_venv, submit_conda
-from .ssh import submit_ssh, monitor_ssh
-from .cluster.sge import submit_sge, monitor_sge
-from .cluster.slurm import submit_slurm, monitor_slurm
-from .cloud.gcp import submit_gcp, monitor_gcp, clean_up_gcp
+from mle_scheduler.local import submit_local, submit_venv, submit_conda
+from mle_scheduler.ssh import submit_ssh, monitor_ssh
+from mle_scheduler.cluster.sge import submit_sge, monitor_sge
+from mle_scheduler.cluster.slurm import submit_slurm, monitor_slurm
+from mle_scheduler.cloud.gcp import submit_gcp, monitor_gcp, clean_up_gcp
 
 
 # Overview of implemented remote resources in addition to local processes
