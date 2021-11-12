@@ -19,6 +19,15 @@ def submit_gcp(
     cloud_settings: dict,
 ):
     """Create a GCP VM job & submit it based on provided file to execute."""
+    if "job_name" not in job_arguments:
+        job_arguments["job_name"] = "job"
+
+    if "use_tpus" not in job_arguments:
+        job_arguments["use_tpus"] = 0
+
+    if "num_gpus" not in job_arguments:
+        job_arguments["num_gpus"] = 0
+
     # 0. Create VM Name - Timestamp + Random 4 digit id
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     random_str = str(random.randrange(1000, 9999))
@@ -27,7 +36,7 @@ def submit_gcp(
 
     # 1. Generate GCP startup file with provided arguments
     startup_fname = vm_name + "-startup.sh"
-    if "extra_install_fname" in job_arguments.keys():
+    if "extra_install_fname" in job_arguments:
         extra_install_fname = job_arguments["extra_install_fname"]
     else:
         extra_install_fname = None

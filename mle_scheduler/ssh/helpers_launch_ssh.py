@@ -34,9 +34,9 @@ def ssh_get_submission_cmd(
             script_cmd = "echo $$; /bin/bash -c 'cd {} && {}'".format(
                 ssh_settings["remote_dir"], cmd
             )
-    elif "use_conda_venv" in job_arguments:
+    elif "use_venv_venv" in job_arguments:
         if job_arguments["use_venv_venv"]:
-            script_cmd = "echo $$; /bin/bash -c 'source {}/{}/bin/activate && {} && cd {} && {}'".format(
+            script_cmd = "echo $$; /bin/bash -c 'source {}/{}/bin/activate && cd {} && {}'".format(
                 os.environ["WORKON_HOME"],
                 job_arguments["env_name"],
                 ssh_settings["remote_dir"],

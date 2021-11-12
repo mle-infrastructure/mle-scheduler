@@ -26,7 +26,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pytest pytest-timeout
-        pip install flake8 black
+        pip install flake8 black mle-logging
         pip install -e .
     - name: Lint with flake8
       run: |
