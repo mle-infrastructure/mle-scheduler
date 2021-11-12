@@ -1,20 +1,20 @@
-# Lightweight Cluster/Cloud VM Job Scheduling 🚂
+# Lightweight Cluster/Cloud VM Job Management 🚀
 [![Pyversions](https://img.shields.io/pypi/pyversions/mle-scheduler.svg?style=flat-square)](https://pypi.python.org/pypi/mle-scheduler)
 [![PyPI version](https://badge.fury.io/py/mle-monitor.svg)](https://badge.fury.io/py/mle-scheduler)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 <a href="https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/logo_transparent.png?raw=true"><img src="https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/logo_transparent.png?raw=true" width="200" align="right" /></a>
 
-Are you looking for a tool to manage your training runs locally, on Slurm/Grid engine clusters, SSH servers or GCP VMs? `mle-scheduler` provides a lightweight API to launch and monitor job queues. It smoothly orchestrates simultaneous runs for different configs/seeds. It is meant to reduce boilerplate and to make job resource specification intuitive. The `mle-scheduler` package aims to provide such a service for [Slurm](https://slurm.schedmd.com/), [Open Grid Engine](http://gridscheduler.sourceforge.net/documentation.html) cluster schedulers & [Google Cloud Platform VMs](https://cloud.google.com/gcp/). It comes with two core functional pillars:
+Are you looking for a tool to manage your training runs locally, on [Slurm](https://slurm.schedmd.com/)/[Open Grid Engine](http://gridscheduler.sourceforge.net/documentation.html) clusters, SSH servers or [Google Cloud Platform VMs](https://cloud.google.com/gcp/)? `mle-scheduler` provides a lightweight API to launch and monitor job queues. It smoothly orchestrates simultaneous runs for different configurations and/or random seeds. It is meant to reduce boilerplate and to make job resource specification intuitive. It comes with two core pillars:
 
 - **`MLEJob`**: Launches and monitors a single job on a resource (Slurm, Open Grid Engine, GCP, SSH, etc.).
-- **`MLEQueue`**: Launches and monitors a queue of jobs with different training configurations and/or random seeds.
-
-<a href="https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/mle_scheduler_structure.png?raw=true"><img src="https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/mle_scheduler_structure.png?raw=true" width="850" align="center" /></a>
+- **`MLEQueue`**: Launches and monitors a queue of jobs with different training configurations and/or seeds.
 
 For a quickstart check out the [notebook blog](https://github.com/mle-infrastructure/mle-hyperopt/blob/main/examples/getting_started.ipynb) or the example scripts 📖
 
 | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mle-infrastructure/mle-scheduler/blob/main/examples/getting_started.ipynb)| [Local](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/run_local.py) | [Slurm](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/run_cluster.py) | [Grid Engine](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/run_cluster.py) | [SSH](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/run_ssh.py) | [GCP](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/run_gcp.py) |
 |:----: |:----:|:----: | :----: | :----:| :----:|
+
+<a href="https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/mle_scheduler_structure.png?raw=true"><img src="https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/mle_scheduler_structure.png?raw=true" width="850" align="center" /></a>
 
 ## Installation ⏳
 
@@ -121,7 +121,7 @@ ssh_settings = {
     "main_server": "<SSH_SERVER>",  # SSH Server address
     "jump_server": '',  # Jump host address
     "ssh_port": 22,  # SSH port
-    "remote_dir": "mle-code-dir",  # Code to sync code to on server
+    "remote_dir": "mle-code-dir",  # Dir to sync code to on server
     "start_up_copy_dir": True,  # Whether to copy code to server
     "clean_up_remote_dir": True  # Whether to delete remote_dir on exit
 }
