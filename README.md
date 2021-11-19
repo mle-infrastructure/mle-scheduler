@@ -2,6 +2,7 @@
 [![Pyversions](https://img.shields.io/pypi/pyversions/mle-scheduler.svg?style=flat-square)](https://pypi.python.org/pypi/mle-scheduler)
 [![PyPI version](https://badge.fury.io/py/mle-scheduler.svg)](https://badge.fury.io/py/mle-scheduler)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![codecov](https://codecov.io/gh/mle-infrastructure/mle-scheduler/branch/main/graph/badge.svg)](https://codecov.io/gh/mle-infrastructure/mle-scheduler)
 <a href="https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/logo_transparent.png?raw=true"><img src="https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/logo_transparent.png?raw=true" width="200" align="right" /></a>
 
 Are you looking for a tool to manage your training runs locally, on [Slurm](https://slurm.schedmd.com/)/[Open Grid Engine](http://gridscheduler.sourceforge.net/documentation.html) clusters, SSH servers or [Google Cloud Platform VMs](https://cloud.google.com/gcp/)? `mle-scheduler` provides a lightweight API to launch and monitor job queues. It smoothly orchestrates simultaneous runs for different configurations and/or random seeds. It is meant to reduce boilerplate and to make job resource specification intuitive. It comes with two core pillars:

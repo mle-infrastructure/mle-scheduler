@@ -36,4 +36,10 @@ jobs:
         flake8 ./mle_scheduler --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Run unit/integration tests
       run: |
-        pytest -vv --durations=0
+        pytest -vv --durations=0 --cov=./ --cov-report=term-missing --cov-report=xml
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+        fail_ci_if_error: true # optional (default = false)
+        verbose: true # optional (default = false)
