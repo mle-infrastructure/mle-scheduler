@@ -40,6 +40,7 @@ class MLEQueue(object):
         slack_message_id: Union[str, None] = None,
         slack_user_name: Union[str, None] = None,
         slack_auth_token: Union[str, None] = None,
+        protocol_db=None,
         logger_level: int = logging.WARNING,
     ):
         # Init experiment class with relevant info
@@ -51,10 +52,11 @@ class MLEQueue(object):
         self.num_seeds = num_seeds  # number seeds to run
         self.max_running_jobs = max_running_jobs  # number of sim running jobs
 
-        # Slack Clusterbot Configuration
+        # Slack Clusterbot Configuration & Protocol DB
         self.slack_message_id = slack_message_id  # Message ts id for slack bot
         self.slack_user_name = slack_user_name  # Slack user name to send message to
         self.slack_auth_token = slack_auth_token  # Slack Authentication Token
+        self.protocol_db = protocol_db
 
         # Virtual environment usage & GCS code directory/SSH settings
         self.cloud_settings = cloud_settings
@@ -172,7 +174,7 @@ class MLEQueue(object):
                 "{task.completed}/{task.total} Jobs",
                 justify="left",
             ),
-            BarColumn(bar_width=30, style="magenta"),
+            BarColumn(bar_width=27, style="magenta"),
             TextColumn("[progress.percentage]{task.percentage:>3.0f}% •"),
             TimeElapsedColumn(),
             TextColumn(":hourglass:", justify="right"),
@@ -222,11 +224,17 @@ class MLEQueue(object):
                                 job["job"].clean_up(job["job_id"])
                             # Update the rich progress bar after job completed
                             progress.advance(task)
+
+                            # Update the slack progress bar
                             if (
                                 self.slack_user_name is not None
                                 and self.slack_auth_token is not None
                             ):
                                 slackbot.update_pbar()
+
+                            # Update the protocol db progress bar
+                            if self.protocol_db is not None:
+                                self.protocol_db.update_progress_bar()
                     time.sleep(0.1)
 
                 # Once budget becomes available again - fill up with new jobs
