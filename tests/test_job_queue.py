@@ -1,6 +1,5 @@
 import os
 import shutil
-import datetime
 from mle_scheduler import MLEJob, MLEQueue
 
 # Only test this locally! For remote - have to run example `run_XXX.py` manually
@@ -19,9 +18,8 @@ def test_job():
     job.run()
 
     # Check existence of expected files
-    date = datetime.datetime.today().strftime("%Y-%m-%d")[2:]
     assert os.path.exists(
-        os.path.join("logs_single", date + "_base_config_1", "logs/log_seed_1.hdf5")
+        os.path.join("logs_single", "base_config_1", "logs/log_seed_1.hdf5")
     )
     shutil.rmtree("logs_single")
     return
@@ -41,19 +39,18 @@ def test_queue():
     queue.run()
 
     # Check existence of expected files
-    date = datetime.datetime.today().strftime("%Y-%m-%d")[2:]
     assert os.path.exists(
-        os.path.join("logs_queue", date + "_base_config_1/logs/log_seed_0.hdf5")
+        os.path.join("logs_queue", "base_config_1/logs/log_seed_0.hdf5")
     )
     assert os.path.exists(
-        os.path.join("logs_queue", date + "_base_config_1/logs/log_seed_1.hdf5")
+        os.path.join("logs_queue", "base_config_1/logs/log_seed_1.hdf5")
     )
 
     assert os.path.exists(
-        os.path.join("logs_queue", date + "_base_config_2/logs/log_seed_0.hdf5")
+        os.path.join("logs_queue", "base_config_2/logs/log_seed_0.hdf5")
     )
     assert os.path.exists(
-        os.path.join("logs_queue", date + "_base_config_2/logs/log_seed_1.hdf5")
+        os.path.join("logs_queue", "base_config_2/logs/log_seed_1.hdf5")
     )
 
     shutil.rmtree("logs_queue")
@@ -75,12 +72,7 @@ def test_automerge():
     queue.run()
 
     # Check existence of expected files
-    date = datetime.datetime.today().strftime("%Y-%m-%d")[2:]
-    assert os.path.exists(
-        os.path.join("logs_merge", date + "_base_config_1/logs/log.hdf5")
-    )
-    assert os.path.exists(
-        os.path.join("logs_merge", date + "_base_config_2/logs/log.hdf5")
-    )
+    assert os.path.exists(os.path.join("logs_merge", "base_config_1/logs/log.hdf5"))
+    assert os.path.exists(os.path.join("logs_merge", "base_config_2/logs/log.hdf5"))
     shutil.rmtree("logs_merge")
     return
