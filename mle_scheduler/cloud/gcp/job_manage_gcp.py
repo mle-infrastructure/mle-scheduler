@@ -31,7 +31,7 @@ def submit_gcp(
     # 0. Create VM Name - Timestamp + Random 4 digit id
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     random_str = str(random.randrange(1000, 9999))
-    vm_name = "-".join([job_arguments["job_name"], timestamp, random_str])
+    vm_name = "-".join(["mle", timestamp, random_str])
     vm_name = re.sub(r"[^a-z0-9-]", "-", vm_name)
 
     # 1. Generate GCP startup file with provided arguments

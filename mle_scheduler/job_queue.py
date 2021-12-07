@@ -1,7 +1,6 @@
 import os
 import logging
 import time
-import datetime
 from typing import Union, List
 import numpy as np
 from rich.logging import RichHandler
@@ -35,6 +34,7 @@ class MLEQueue(object):
         random_seeds: Union[None, List[int]] = None,
         max_running_jobs: int = 10,
         automerge_seeds: bool = False,
+        automerge_configs: bool = False,
         cloud_settings: Union[dict, None] = None,
         ssh_settings: Union[dict, None] = None,
         slack_message_id: Union[str, None] = None,
@@ -95,6 +95,7 @@ class MLEQueue(object):
         elif self.num_seeds == 1 and random_seeds is None:
             self.random_seeds = [default_seed]
         self.automerge_seeds = automerge_seeds
+        self.automerge_configs = automerge_configs
 
         # Extract extra_cmd_line_input from job_arguments
         if self.job_arguments is not None:
@@ -111,22 +112,22 @@ class MLEQueue(object):
         # Generate a list of jobs to be queued/executed on the resource
         # Recreate directory in which the results are stored - later merge
         # 3 status types: -1 - not started yet; 0 - completed, 1 - running
-        timestr = datetime.datetime.today().strftime("%Y-%m-%d")[2:] + "_"
-        self.queue = []
+        self.queue, self.mle_log_dirs, self.mle_run_ids = [], [], []
+
         for config_fname in self.config_filenames:
             base_str = os.path.split(config_fname)[1].split(".")[0]
+            # Add mle log dir to storage list
+            sub_experiment_dir = os.path.join(experiment_dir, base_str)
+            self.mle_log_dirs.append(sub_experiment_dir)
+            self.mle_run_ids.append(base_str)
             for seed_id in self.random_seeds:
                 self.queue.append(
                     {
                         "config_fname": config_fname,
                         "seed_id": seed_id,
                         "base_str": base_str,
-                        "experiment_dir": os.path.join(
-                            experiment_dir, timestr + base_str
-                        ),
-                        "log_dir": os.path.join(
-                            experiment_dir, timestr + base_str + "/logs/"
-                        ),
+                        "experiment_dir": sub_experiment_dir,
+                        "log_dir": os.path.join(sub_experiment_dir, "/logs"),
                         "status": -1,
                         "job": None,
                         "job_id": None,
@@ -290,14 +291,14 @@ class MLEQueue(object):
                         f"Deleted cloud directory - {self.cloud_settings['remote_dir']}"
                     )
 
-        # Merge seeds of one eval/config if all jobs done!
-        if self.automerge_seeds:
-            merged_dirs = []
-            for job in self.queue:
-                if job["experiment_dir"] not in merged_dirs:
-                    self.merge_seeds(job["experiment_dir"])
-                    merged_dirs.append(job["experiment_dir"])
-            self.logger.info(f"Merged seeds for log directories - {merged_dirs}")
+        # Merge configs and/or seeds of one eval/config if all jobs done!
+        if self.automerge_configs:
+            self.merge_configs(merge_seeds=True)
+            self.logger.info(f"Merged config logs for different directories")
+        elif self.automerge_seeds:
+            for log_dir in self.mle_log_dirs:
+                self.merge_seeds(log_dir)
+            self.logger.info(f"Merged seeds for log directories - {self.mle_log_dirs}")
 
     def launch(self, queue_counter):
         """Launch a set of jobs for one configuration - one for each seed."""
@@ -332,7 +333,7 @@ class MLEQueue(object):
             return status
 
     def merge_seeds(self, experiment_dir: str) -> None:
-        """Collect all seed-specific seeds into single <eval_id>.hdf5 file."""
+        """Collect all seed-specific seeds into single log.hdf5 file."""
         try:
             from mle_logging import merge_seed_logs
         except ModuleNotFoundError as err:
@@ -347,3 +348,21 @@ class MLEQueue(object):
         if file_extension == ".py":
             merged_path = os.path.join(experiment_dir, "logs", "log.hdf5")
             merge_seed_logs(merged_path, experiment_dir, self.num_seeds)
+
+    def merge_configs(self, merge_seeds: bool = False):
+        """Collect all config-specific logs into single meta_log.hdf5 file."""
+        try:
+            from mle_logging import merge_config_logs, merge_seed_logs
+        except ModuleNotFoundError as err:
+            raise ModuleNotFoundError(
+                f"{err}. You need to install `mle_logging` "
+                "to use the `merge_configs` method."
+            )
+
+        if merge_seeds:
+            for log_dir in self.mle_log_dirs:
+                self.merge_seeds(log_dir)
+
+        merge_config_logs(
+            experiment_dir=self.experiment_dir, all_run_ids=self.mle_run_ids
+        )

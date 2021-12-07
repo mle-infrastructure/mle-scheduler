@@ -32,6 +32,10 @@ def submit_slurm(
     job_arguments["script"] = script
     slurm_job_template = slurm_generate_startup_file(job_arguments)
 
+    # Create combined string if multiple jobs provided as list
+    if type(job_arguments["partition"]) == list:
+        job_arguments["partition"] = ",".join(job_arguments["partition"])
+
     # Add path for virtualenv activation
     if "use_venv_venv" in job_arguments:
         if job_arguments["use_venv_venv"]:
@@ -52,24 +56,25 @@ def submit_slurm(
 
     # Submit the job via subprocess call
     command = "sbatch < " + base + ".sh"
-    proc = submit_subprocess(command)
-
-    # Wait until system has processed submission
     while True:
-        poll = proc.poll()
-        if poll is None:
-            continue
+        proc = submit_subprocess(command)
+
+        # Wait until system has processed submission
+        while True:
+            poll = proc.poll()
+            if poll is None:
+                continue
+            else:
+                break
+
+        # Get output & error messages (if there is an error)
+        out, err = proc.communicate()
+        if proc.returncode != 0:
+            print(out, err)
+            job_id = -1
         else:
+            job_id = int(out.decode("utf-8").split()[-1])
             break
-
-    # Get output & error messages (if there is an error)
-    out, err = proc.communicate()
-    if proc.returncode != 0:
-        print(out, err)
-        job_id = -1
-    else:
-        job_id = int(out.decode("utf-8").split()[-1])
-
     # Wait until the job is listed under the qstat scheduled jobs
     while True:
         job_running = monitor_slurm(job_id, user_name)

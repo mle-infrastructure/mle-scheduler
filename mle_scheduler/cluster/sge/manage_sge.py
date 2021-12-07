@@ -32,6 +32,10 @@ def submit_sge(
     job_arguments["script"] = script
     sge_job_template = sge_generate_startup_file(job_arguments)
 
+    # Create combined string if multiple jobs provided as list
+    if type(job_arguments["queue"]) == list:
+        job_arguments["queue"] = ",".join(job_arguments["queue"])
+
     # Add path for virtualenv activation
     if "use_venv_venv" in job_arguments.keys():
         if job_arguments["use_venv_venv"]:
@@ -55,24 +59,26 @@ def submit_sge(
 
     # Submit the job via subprocess call
     command = "qsub < " + base + ".qsub " + "&>/dev/null"
-    proc = submit_subprocess(command)
-
-    # Wait until system has processed submission
     while True:
-        poll = proc.poll()
-        if poll is None:
-            continue
-        else:
-            break
+        proc = submit_subprocess(command)
 
-    # Get output & error messages (if there is an error)
-    out, err = proc.communicate()
-    if proc.returncode != 0:
-        print(out, err)
-        job_id = -1
-    else:
-        job_info = out.split(b"\n")
-        job_id = int(job_info[0].decode("utf-8").split()[0])
+        # Wait until system has processed submission
+        while True:
+            poll = proc.poll()
+            if poll is None:
+                continue
+            else:
+                break
+
+        # Get output & error messages (if there is an error)
+        out, err = proc.communicate()
+        if proc.returncode != 0:
+            print(out, err)
+            job_id = -1
+        else:
+            job_info = out.split(b"\n")
+            job_id = int(job_info[0].decode("utf-8").split()[0])
+            break
 
     # Wait until the job is listed under the qstat scheduled jobs
     while True:
