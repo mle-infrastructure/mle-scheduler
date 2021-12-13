@@ -37,6 +37,7 @@ class MLEQueue(object):
         automerge_configs: bool = False,
         cloud_settings: Union[dict, None] = None,
         ssh_settings: Union[dict, None] = None,
+        use_slack_bot: bool = False,
         slack_message_id: Union[str, None] = None,
         slack_user_name: Union[str, None] = None,
         slack_auth_token: Union[str, None] = None,
@@ -53,6 +54,7 @@ class MLEQueue(object):
         self.max_running_jobs = max_running_jobs  # number of sim running jobs
 
         # Slack Clusterbot Configuration & Protocol DB
+        self.use_slack_bot = use_slack_bot  # Boolean whether to use slack bot
         self.slack_message_id = slack_message_id  # Message ts id for slack bot
         self.slack_user_name = slack_user_name  # Slack user name to send message to
         self.slack_auth_token = slack_auth_token  # Slack Authentication Token
@@ -181,7 +183,11 @@ class MLEQueue(object):
             TextColumn(":hourglass:", justify="right"),
         )
 
-        if self.slack_user_name is not None and self.slack_auth_token is not None:
+        if (
+            self.use_slack_bot
+            and self.slack_user_name is not None
+            and self.slack_auth_token is not None
+        ):
             try:
                 from clusterbot import ClusterBot
             except ImportError:
@@ -228,7 +234,8 @@ class MLEQueue(object):
 
                             # Update the slack progress bar
                             if (
-                                self.slack_user_name is not None
+                                self.use_slack_bot
+                                and self.slack_user_name is not None
                                 and self.slack_auth_token is not None
                             ):
                                 slackbot.update_pbar()
@@ -332,10 +339,10 @@ class MLEQueue(object):
             status = job.monitor(job_id, False)
             return status
 
-    def merge_seeds(self, experiment_dir: str) -> None:
+    def merge_seeds(self, experiment_dir: str, load: bool = True) -> None:
         """Collect all seed-specific seeds into single log.hdf5 file."""
         try:
-            from mle_logging import merge_seed_logs
+            from mle_logging import merge_seed_logs, load_log
         except ModuleNotFoundError as err:
             raise ModuleNotFoundError(
                 f"{err}. You need to install `mle_logging` "
@@ -349,10 +356,14 @@ class MLEQueue(object):
             merged_path = os.path.join(experiment_dir, "logs", "log.hdf5")
             merge_seed_logs(merged_path, experiment_dir, self.num_seeds)
 
-    def merge_configs(self, merge_seeds: bool = False):
+        if load:
+            self.log = load_log(experiment_dir)
+
+    def merge_configs(self, merge_seeds: bool = False, load: bool = True):
         """Collect all config-specific logs into single meta_log.hdf5 file."""
         try:
-            from mle_logging import merge_config_logs, merge_seed_logs
+            from mle_logging import merge_config_logs, merge_seed_logs, load_log
+
         except ModuleNotFoundError as err:
             raise ModuleNotFoundError(
                 f"{err}. You need to install `mle_logging` "
@@ -366,3 +377,8 @@ class MLEQueue(object):
         merge_config_logs(
             experiment_dir=self.experiment_dir, all_run_ids=self.mle_run_ids
         )
+
+        if load:
+            self.log = load_log(
+                os.path.join(self.experiment_dir, "meta_log.hdf5"), aggregate_seeds=True
+            )
