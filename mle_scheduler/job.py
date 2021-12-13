@@ -376,8 +376,9 @@ class MLEJob(object):
 
     def generate_cmd_line_args(self) -> str:
         """Generate cmd line args for .py -> get_train_configs_ready"""
+        cmd_line_args = ""
         if self.experiment_dir is not None:
-            cmd_line_args = " -exp_dir " + self.experiment_dir
+            cmd_line_args += " -exp_dir " + self.experiment_dir
 
         if self.config_filename is not None:
             cmd_line_args += " -config " + self.config_filename
