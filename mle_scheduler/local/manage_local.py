@@ -3,13 +3,15 @@ import random
 import string
 import shlex
 import subprocess as sp
+import sys
 
+PYTHON_EXECUTABLE = sys.executable # local executable Python file (more reliable than `python`)
 
 def submit_conda(filename: str, cmd_line_arguments: str, job_arguments: dict):
     """Create a local job & submit it based on provided file to execute."""
     f_name, f_extension = os.path.splitext(filename)
     if f_extension == ".py":
-        cmd = f"python {filename} {cmd_line_arguments}"
+        cmd = f"{PYTHON_EXECUTABLE} {filename} {cmd_line_arguments}"
     elif f_extension == ".sh":
         cmd = f"bash {filename} {cmd_line_arguments}"
     else:
@@ -35,7 +37,7 @@ def submit_conda(filename: str, cmd_line_arguments: str, job_arguments: dict):
 
 def submit_venv(filename: str, cmd_line_arguments: str, job_arguments: dict):
     """Create a local job & submit it based on provided file to execute."""
-    cmd = f"python {filename} {cmd_line_arguments}"
+    cmd = f"{PYTHON_EXECUTABLE} {filename} {cmd_line_arguments}"
     env_name = job_arguments["env_name"]
     command_template = '/bin/bash -c "source {}/{}/bin/activate && {}"'
     cmd = shlex.split(command_template.format(os.environ["WORKON_HOME"], env_name, cmd))
@@ -45,7 +47,7 @@ def submit_venv(filename: str, cmd_line_arguments: str, job_arguments: dict):
 
 def submit_local(filename: str, cmd_line_arguments: str):
     """Create a local job & submit it based on provided file to execute."""
-    cmd = f"python {filename} {cmd_line_arguments}"
+    cmd = f"{PYTHON_EXECUTABLE} {filename} {cmd_line_arguments}"
     proc = submit_subprocess(cmd)
     return proc
 
