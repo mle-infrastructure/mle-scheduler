@@ -8,7 +8,7 @@ def main():
         resource_to_run="local",
         job_filename="train.py",
         config_filename="base_config_1.yaml",
-        experiment_dir="logs_ssh_single",
+        experiment_dir="logs_local_single",
         logger_level=logging.INFO,
     )
 
@@ -20,7 +20,7 @@ def main():
         job_filename="train.py",
         config_filenames=["base_config_1.yaml", "base_config_2.yaml"],
         random_seeds=[0, 1],
-        experiment_dir="logs_ssh_queue",
+        experiment_dir="logs_local_queue",
         logger_level=logging.INFO,
     )
 

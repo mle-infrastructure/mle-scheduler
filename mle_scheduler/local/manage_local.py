@@ -5,7 +5,10 @@ import shlex
 import subprocess as sp
 import sys
 
-PYTHON_EXECUTABLE = sys.executable # local executable Python file (more reliable than `python`)
+PYTHON_EXECUTABLE = (
+    sys.executable
+)  # local executable Python file (more reliable than `python`)
+
 
 def submit_conda(filename: str, cmd_line_arguments: str, job_arguments: dict):
     """Create a local job & submit it based on provided file to execute."""
