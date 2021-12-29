@@ -64,6 +64,7 @@ class MLEJob(object):
         experiment_dir: Union[None, str] = None,
         seed_id: Union[None, int] = None,
         extra_cmd_line_input: Union[None, dict] = None,
+        delete_config: bool = False,
         cloud_settings: Union[dict, None] = None,
         ssh_settings: Union[dict, None] = None,
         logger_level: int = logging.WARNING,
@@ -75,6 +76,7 @@ class MLEJob(object):
         self.job_arguments = job_arguments.copy()  # Job resource configuration
         self.experiment_dir = experiment_dir  # main results dir (create)
         self.seed_id = seed_id  # random seed to be passed as cmd-line arg
+        self.delete_config = delete_config  # Option to delete config file after run
         self.user_name = getpass.getuser()
 
         # Create command line arguments for job to schedule (passed to .py)
@@ -373,6 +375,10 @@ class MLEJob(object):
                 job_id, self.job_arguments, self.experiment_dir, self.cloud_settings
             )
             self.logger.info(f"VM Name: {job_id} - Delete VM - {self.config_filename}")
+
+        # If desired also delete configuration files
+        if self.delete_config:
+            os.remove(self.config_filename)
 
     def generate_cmd_line_args(self) -> str:
         """Generate cmd line args for .py -> get_train_configs_ready"""

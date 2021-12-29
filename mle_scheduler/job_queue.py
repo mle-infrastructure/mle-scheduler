@@ -35,6 +35,7 @@ class MLEQueue(object):
         max_running_jobs: int = 10,
         automerge_seeds: bool = False,
         automerge_configs: bool = False,
+        delete_config: bool = False,
         cloud_settings: Union[dict, None] = None,
         ssh_settings: Union[dict, None] = None,
         use_slack_bot: bool = False,
@@ -52,6 +53,7 @@ class MLEQueue(object):
         self.job_arguments = job_arguments.copy()  # job-specific args
         self.num_seeds = num_seeds  # number seeds to run
         self.max_running_jobs = max_running_jobs  # number of sim running jobs
+        self.delete_config = delete_config  # Option to delete config file after run
 
         # Slack Clusterbot Configuration & Protocol DB
         self.use_slack_bot = use_slack_bot  # Boolean whether to use slack bot
@@ -227,8 +229,7 @@ class MLEQueue(object):
                             self.num_running_jobs -= 1
                             job["status"] = 0
                             # Clean up after job completion (e.g VM instance)
-                            if self.resource_to_run == "gcp-cloud":
-                                job["job"].clean_up(job["job_id"])
+                            job["job"].clean_up(job["job_id"])
                             # Update the rich progress bar after job completed
                             progress.advance(task)
 
@@ -318,6 +319,7 @@ class MLEQueue(object):
             self.experiment_dir,
             self.queue[queue_counter]["seed_id"],
             self.extra_cmd_line_input,
+            self.delete_config,
             self.cloud_settings,
             self.ssh_settings,
         )

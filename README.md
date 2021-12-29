@@ -176,17 +176,19 @@ queue = MLEQueue(
 queue.run()
 ```
 
+### Citing the MLE-Infrastructure ✏️
+
+If you use `mle-scheduler` in your research, please cite it as follows:
+
+```
+@software{mle_infrastructure2021github,
+  author = {Robert Tjarko Lange},
+  title = {{MLE-Infrastructure}: A Set of Lightweight Tools for Distributed Machine Learning Experimentation},
+  url = {http://github.com/mle-infrastructure},
+  year = {2021},
+}
+```
 
 ## Development & Milestones for Next Release
 
-You can run the test suite via `python -m pytest -vv tests/`. If you find a bug or are missing your favourite feature, feel free to contact me [@RobertTLange](https://twitter.com/RobertTLange) or create an issue :hugs:. In future releases I plan on implementing the following:
-
-- [ ] Add configuration details to examples (time of job, memory, etc.)
-- [ ] Clean up TPU GCP VM & JAX dependencies case
-- [ ] Add local launching of cluster jobs via SSH to headnode
-  - [ ] Copy code + launch tmux/screen + execute queue launch file
-  - [ ] How to handle broken connection?!
-- [ ] Add Docker/Singularity container setup support
-- [ ] Add more cloud/scheduler options/functionality
-  - [ ] Add Azure support
-  - [ ] Add AWS support
+You can run the test suite via `python -m pytest -vv tests/`. If you find a bug or are missing your favourite feature, feel free to contact me [@RobertTLange](https://twitter.com/RobertTLange) or create an issue :hugs:. 
