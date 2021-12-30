@@ -1,7 +1,7 @@
 import argparse
 import random
 from mle_logging import MLELogger
-from mle_logging.utils import load_yaml_config
+from mle_logging.utils import load_config
 
 
 def train_your_net(epoch: int, seed_id: int, lrate: float, batch_size: int, arch: str):
@@ -14,13 +14,14 @@ def train_your_net(epoch: int, seed_id: int, lrate: float, batch_size: int, arch
 
 def main(experiment_dir: str, config_fname: str, seed_id: int):
     """Example training 'loop' using MLE-Logging."""
-    train_config = load_yaml_config(config_fname)
+    train_config = load_config(config_fname)
     log = MLELogger(
         experiment_dir=experiment_dir,
         config_fname=config_fname,
         seed_id=seed_id,
         time_to_track=["num_epochs"],
         what_to_track=["train_loss", "test_loss"],
+        verbose=True,
     )
     for epoch in range(1, 11):
         train_loss, test_loss = train_your_net(epoch, seed_id, **train_config)

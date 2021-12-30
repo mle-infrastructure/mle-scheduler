@@ -11,6 +11,7 @@ def submit_sge(
     cmd_line_arguments: str,
     job_arguments: dict,
     user_name: str,
+    debug_mode: bool,
     clean_up: bool = True,
 ) -> str:
     """Create a qsub job & submit it based on provided file to execute."""
@@ -60,7 +61,7 @@ def submit_sge(
     # Submit the job via subprocess call
     command = "qsub < " + base + ".qsub " + "&>/dev/null"
     while True:
-        proc = submit_subprocess(command)
+        proc = submit_subprocess(command, debug_mode)
 
         # Wait until system has processed submission
         while True:

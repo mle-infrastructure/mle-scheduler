@@ -36,6 +36,7 @@ class MLEQueue(object):
         automerge_seeds: bool = False,
         automerge_configs: bool = False,
         delete_config: bool = False,
+        debug_mode: bool = False,
         cloud_settings: Union[dict, None] = None,
         ssh_settings: Union[dict, None] = None,
         use_slack_bot: bool = False,
@@ -54,6 +55,7 @@ class MLEQueue(object):
         self.num_seeds = num_seeds  # number seeds to run
         self.max_running_jobs = max_running_jobs  # number of sim running jobs
         self.delete_config = delete_config  # Option to delete config file after run
+        self.debug_mode = debug_mode  # Pipe stdout and stderr to files
 
         # Slack Clusterbot Configuration & Protocol DB
         self.use_slack_bot = use_slack_bot  # Boolean whether to use slack bot
@@ -320,6 +322,7 @@ class MLEQueue(object):
             self.queue[queue_counter]["seed_id"],
             self.extra_cmd_line_input,
             self.delete_config,
+            self.debug_mode,
             self.cloud_settings,
             self.ssh_settings,
         )
