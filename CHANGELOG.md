@@ -1,11 +1,10 @@
-## [v0.0.5] - [Unreleased]
+## [v0.0.5] - [01/05/2021]
 
 ### Added
 
-### Changed
-
-### Fixed
-
+- Adds `MLEQueue` option to delete config after job has finished
+- Adds `debug_mode` option to store `stdout` & `stderr` to files
+- Adds merging/loading of generated logs in `MLEQueue` w. `automerge_configs` option
 
 ## [v0.0.4] - [12/07/2021]
 
