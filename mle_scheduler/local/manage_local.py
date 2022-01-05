@@ -5,9 +5,14 @@ import shlex
 import subprocess as sp
 import sys
 
-PYTHON_EXECUTABLE = sys.executable # local executable Python file (more reliable than `python`)
+PYTHON_EXECUTABLE = (
+    sys.executable
+)  # local executable Python file (more reliable than `python`)
 
-def submit_conda(filename: str, cmd_line_arguments: str, job_arguments: dict):
+
+def submit_conda(
+    filename: str, cmd_line_arguments: str, job_arguments: dict, debug: bool = True
+):
     """Create a local job & submit it based on provided file to execute."""
     f_name, f_extension = os.path.splitext(filename)
     if f_extension == ".py":
@@ -31,29 +36,34 @@ def submit_conda(filename: str, cmd_line_arguments: str, job_arguments: dict):
                     && {cmd}"
     except Exception:
         pass
-    proc = submit_subprocess(cmd)
+    proc = submit_subprocess(cmd, debug)
     return proc
 
 
-def submit_venv(filename: str, cmd_line_arguments: str, job_arguments: dict):
+def submit_venv(
+    filename: str, cmd_line_arguments: str, job_arguments: dict, debug: bool = True
+):
     """Create a local job & submit it based on provided file to execute."""
     cmd = f"{PYTHON_EXECUTABLE} {filename} {cmd_line_arguments}"
     env_name = job_arguments["env_name"]
     command_template = '/bin/bash -c "source {}/{}/bin/activate && {}"'
     cmd = shlex.split(command_template.format(os.environ["WORKON_HOME"], env_name, cmd))
-    proc = submit_subprocess(cmd)
+    proc = submit_subprocess(cmd, debug)
     return proc
 
 
-def submit_local(filename: str, cmd_line_arguments: str):
+def submit_local(filename: str, cmd_line_arguments: str, debug: bool = True):
     """Create a local job & submit it based on provided file to execute."""
     cmd = f"{PYTHON_EXECUTABLE} {filename} {cmd_line_arguments}"
-    proc = submit_subprocess(cmd)
+    proc = submit_subprocess(cmd, debug)
     return proc
 
 
-def submit_subprocess(cmd: str) -> sp.Popen:
+def submit_subprocess(cmd: str, debug: bool = True) -> sp.Popen:
     """Submit a subprocess & return the process."""
+    # Pipe stdout & stderr to separate files.
+    if debug:
+        cmd += " 2>>err.err 1>>log.txt"
     while True:
         try:
             proc = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)

@@ -16,6 +16,7 @@ def submit_gcp(
     cmd_line_arguments: str,
     experiment_dir: str,
     job_arguments: dict,
+    debug_mode: bool,
     cloud_settings: dict,
 ):
     """Create a GCP VM job & submit it based on provided file to execute."""
@@ -57,6 +58,9 @@ def submit_gcp(
     gcp_launch_cmd, job_gcp_args = gcp_get_submission_cmd(
         vm_name, job_arguments, startup_fname
     )
+
+    if debug_mode:
+        gcp_launch_cmd += " 2>>err.err 1>>log.txt"
 
     # 3. Launch GCP VM Instance - Everything handled by startup file
     sp.run(gcp_launch_cmd)

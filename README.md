@@ -3,6 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/mle-scheduler.svg)](https://badge.fury.io/py/mle-scheduler)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![codecov](https://codecov.io/gh/mle-infrastructure/mle-scheduler/branch/main/graph/badge.svg)](https://codecov.io/gh/mle-infrastructure/mle-scheduler)
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mle-infrastructure/mle-scheduler/blob/main/examples/getting_started.ipynb)
 <a href="https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/logo_transparent.png?raw=true"><img src="https://github.com/mle-infrastructure/mle-scheduler/blob/main/docs/logo_transparent.png?raw=true" width="200" align="right" /></a>
 
 Are you looking for a tool to manage your training runs locally, on [Slurm](https://slurm.schedmd.com/)/[Open Grid Engine](http://gridscheduler.sourceforge.net/documentation.html) clusters, SSH servers or [Google Cloud Platform VMs](https://cloud.google.com/gcp/)? `mle-scheduler` provides a lightweight API to launch and monitor job queues. It smoothly orchestrates simultaneous runs for different configurations and/or random seeds. It is meant to reduce boilerplate and to make job resource specification intuitive. It comes with two core pillars:
@@ -175,14 +176,19 @@ queue = MLEQueue(
 queue.run()
 ```
 
+### Citing the MLE-Infrastructure ✏️
 
-## Development & Milestones for Next Release
+If you use `mle-scheduler` in your research, please cite it as follows:
 
-You can run the test suite via `python -m pytest -vv tests/`. If you find a bug or are missing your favourite feature, feel free to contact me [@RobertTLange](https://twitter.com/RobertTLange) or create an issue :hugs:. In future releases I plan on implementing the following:
+```
+@software{mle_infrastructure2021github,
+  author = {Robert Tjarko Lange},
+  title = {{MLE-Infrastructure}: A Set of Lightweight Tools for Distributed Machine Learning Experimentation},
+  url = {http://github.com/mle-infrastructure},
+  year = {2021},
+}
+```
 
-- [ ] Add configuration details to examples (time of job, memory, etc.)
-- [ ] Clean up TPU GCP VM & JAX dependencies case
-- [ ] Add local launching of cluster jobs via SSH to headnode
-- [ ] Add Docker/Singularity container setup support
-- [ ] Add Azure support
-- [ ] Add AWS support
+## Development 👷
+
+You can run the test suite via `python -m pytest -vv tests/`. If you find a bug or are missing your favourite feature, feel free to create an issue and/or start [contributing](CONTRIBUTING.md) :hugs:.

@@ -64,6 +64,8 @@ class MLEJob(object):
         experiment_dir: Union[None, str] = None,
         seed_id: Union[None, int] = None,
         extra_cmd_line_input: Union[None, dict] = None,
+        delete_config: bool = False,
+        debug_mode: bool = False,
         cloud_settings: Union[dict, None] = None,
         ssh_settings: Union[dict, None] = None,
         logger_level: int = logging.WARNING,
@@ -75,6 +77,8 @@ class MLEJob(object):
         self.job_arguments = job_arguments.copy()  # Job resource configuration
         self.experiment_dir = experiment_dir  # main results dir (create)
         self.seed_id = seed_id  # random seed to be passed as cmd-line arg
+        self.delete_config = delete_config  # Option to delete config file after run
+        self.debug_mode = debug_mode  # Pipe stdout and stderr to files
         self.user_name = getpass.getuser()
 
         # Create command line arguments for job to schedule (passed to .py)
@@ -219,26 +223,40 @@ class MLEJob(object):
         if "use_conda_venv" in self.job_arguments.keys():
             if self.job_arguments["use_conda_venv"]:
                 proc = submit_conda(
-                    self.job_filename, self.cmd_line_args, self.job_arguments
+                    self.job_filename,
+                    self.cmd_line_args,
+                    self.job_arguments,
+                    self.debug_mode,
                 )
             else:
-                proc = submit_local(self.job_filename, self.cmd_line_args)
+                proc = submit_local(
+                    self.job_filename, self.cmd_line_args, self.debug_mode
+                )
         elif "use_venv_venv" in self.job_arguments.keys():
             if self.job_arguments["use_venv_venv"]:
                 proc = submit_venv(
-                    self.job_filename, self.cmd_line_args, self.job_arguments
+                    self.job_filename,
+                    self.cmd_line_args,
+                    self.job_arguments,
+                    self.debug_mode,
                 )
             else:
-                proc = submit_local(self.job_filename, self.cmd_line_args)
+                proc = submit_local(
+                    self.job_filename, self.cmd_line_args, self.debug_mode
+                )
         else:
-            proc = submit_local(self.job_filename, self.cmd_line_args)
+            proc = submit_local(self.job_filename, self.cmd_line_args, self.debug_mode)
         self.job_status = 1
         return proc
 
     def schedule_ssh(self):
         """Schedules job on SSH servers."""
         proc = submit_ssh(
-            self.job_filename, self.cmd_line_args, self.job_arguments, self.ssh_settings
+            self.job_filename,
+            self.cmd_line_args,
+            self.job_arguments,
+            self.ssh_settings,
+            self.debug_mode,
         )
         self.job_status = 1
         return proc
@@ -251,6 +269,7 @@ class MLEJob(object):
                 self.cmd_line_args,
                 self.job_arguments,
                 self.user_name,
+                self.debug_mode,
                 clean_up=True,
             )
         elif self.resource_to_run == "slurm-cluster":
@@ -259,6 +278,7 @@ class MLEJob(object):
                 self.cmd_line_args,
                 self.job_arguments,
                 self.user_name,
+                self.debug_mode,
                 clean_up=True,
             )
         if job_id == -1:
@@ -276,6 +296,7 @@ class MLEJob(object):
                 self.cmd_line_args,
                 self.experiment_dir,
                 self.job_arguments,
+                self.debug_mode,
                 self.cloud_settings,
             )
         if job_id == -1:
@@ -307,6 +328,9 @@ class MLEJob(object):
                 return 0
         else:
             poll = proc.poll()
+
+            # Get output & error messages (if there is an error)
+            out, err = proc.communicate()
             if poll is None:
                 return 1
             else:
@@ -373,6 +397,10 @@ class MLEJob(object):
                 job_id, self.job_arguments, self.experiment_dir, self.cloud_settings
             )
             self.logger.info(f"VM Name: {job_id} - Delete VM - {self.config_filename}")
+
+        # If desired also delete configuration files
+        if self.delete_config:
+            os.remove(self.config_filename)
 
     def generate_cmd_line_args(self) -> str:
         """Generate cmd line args for .py -> get_train_configs_ready"""

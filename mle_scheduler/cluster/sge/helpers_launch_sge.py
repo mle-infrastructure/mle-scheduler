@@ -31,7 +31,7 @@ def sge_generate_startup_file(job_arguments: dict) -> str:
     if "include_nodes" in job_arguments:
         base_template += (
             "#$ -l hostname="
-            + "&".join((+f"{x}" for x in job_arguments["include_nodes"]))
+            + "&".join((f"{x}" for x in job_arguments["include_nodes"]))
             + "\n"
         )
 

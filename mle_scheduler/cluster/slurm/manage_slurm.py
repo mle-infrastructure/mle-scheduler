@@ -11,6 +11,7 @@ def submit_slurm(
     cmd_line_arguments: str,
     job_arguments: dict,
     user_name: str,
+    debug_mode: bool,
     clean_up: bool = True,
 ) -> str:
     """Create a qsub job & submit it based on provided file to execute."""
@@ -57,7 +58,7 @@ def submit_slurm(
     # Submit the job via subprocess call
     command = "sbatch < " + base + ".sh"
     while True:
-        proc = submit_subprocess(command)
+        proc = submit_subprocess(command, debug_mode)
 
         # Wait until system has processed submission
         while True:
