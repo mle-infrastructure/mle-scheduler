@@ -2,7 +2,6 @@ import os
 import glob
 import logging
 from typing import Union
-from google.cloud import storage
 
 
 def send_dir_gcp(
@@ -13,10 +12,20 @@ def send_dir_gcp(
     """Send entire dir (recursively) to Google Cloud Storage Bucket."""
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
+    try:
+        from google.cloud import storage
+
+    except ImportError:
+        raise ImportError(
+            "You need to install `google-cloud-storage` to use GCP buckets."
+        )
+
     for i in range(number_of_connect_tries):
         try:
             client = storage.Client(cloud_settings["project_name"])
-            bucket = client.get_bucket(cloud_settings["bucket_name"], timeout=20)
+            bucket = client.get_bucket(
+                cloud_settings["bucket_name"], timeout=20
+            )
         except Exception:
             logger.info(
                 f"Attempt {i+1}/{number_of_connect_tries}"
@@ -59,15 +68,24 @@ def copy_dir_gcp(
     """Download entire dir (recursively) from Google Cloud Storage Bucket."""
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
+    try:
+        from google.cloud import storage
+
+    except ImportError:
+        raise ImportError(
+            "You need to install `google-cloud-storage` to use GCP buckets."
+        )
 
     for i in range(number_of_connect_tries):
         try:
             client = storage.Client(cloud_settings["project_name"])
-            bucket = client.get_bucket(cloud_settings["bucket_name"], timeout=20)
+            bucket = client.get_bucket(
+                cloud_settings["bucket_name"], timeout=20
+            )
         except Exception:
             logger.info(
                 f"Attempt {i+1}/{number_of_connect_tries}"
-                f" - Failed sending to GCloud Storage"
+                " - Failed sending to GCloud Storage"
             )
 
     blobs = bucket.list_blobs(prefix=remote_dir)  # Get list of files
@@ -109,10 +127,20 @@ def delete_dir_gcp(
     """Delete a directory in a GCS bucket."""
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
+    try:
+        from google.cloud import storage
+
+    except ImportError:
+        raise ImportError(
+            "You need to install `google-cloud-storage` to use GCP buckets."
+        )
+
     for i in range(number_of_connect_tries):
         try:
             client = storage.Client(cloud_settings["project_name"])
-            bucket = client.get_bucket(cloud_settings["bucket_name"], timeout=20)
+            bucket = client.get_bucket(
+                cloud_settings["bucket_name"], timeout=20
+            )
         except Exception:
             logger.info(
                 f"Attempt {i+1}/{number_of_connect_tries}"

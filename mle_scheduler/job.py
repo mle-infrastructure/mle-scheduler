@@ -19,7 +19,7 @@ other_resources = ["ssh-node", "local"]
 
 class MLEJob(object):
     """
-    Basic Job Class - Everything builds on this!
+    Basic Job Class - Everything builds on top of this!
 
     This class defines, executes & monitors an individual job that can
     either be run locally, on a sungrid-engine (SGE) or SLURM cluster.
@@ -77,7 +77,9 @@ class MLEJob(object):
         self.job_arguments = job_arguments.copy()  # Job resource configuration
         self.experiment_dir = experiment_dir  # main results dir (create)
         self.seed_id = seed_id  # random seed to be passed as cmd-line arg
-        self.delete_config = delete_config  # Option to delete config file after run
+        self.delete_config = (
+            delete_config  # Option to delete config file after run
+        )
         self.debug_mode = debug_mode  # Pipe stdout and stderr to files
         self.user_name = getpass.getuser()
 
@@ -101,7 +103,10 @@ class MLEJob(object):
         # Instantiate/connect a logger
         FORMAT = "%(message)s"
         logging.basicConfig(
-            level=logger_level, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+            level=logger_level,
+            format=FORMAT,
+            datefmt="[%X]",
+            handlers=[RichHandler()],
         )
 
         self.logger = logging.getLogger(__name__)
@@ -114,7 +119,8 @@ class MLEJob(object):
         # Monitor status of job based on identifier
         status_out = self.monitor(job_id, continuous=True)
         # If they exist - remove log & error file
-        self.clean_up(job_id)
+        if not self.debug_mode:
+            self.clean_up(job_id)
         return status_out
 
     def schedule(self) -> str:
@@ -159,7 +165,8 @@ class MLEJob(object):
             job_id = self.schedule_ssh()
             if self.job_status == 1:
                 self.logger.info(
-                    f"PID: {job_id} - SSH job scheduled " f"- {self.config_filename}"
+                    f"PID: {job_id} - SSH job scheduled "
+                    f"- {self.config_filename}"
                 )
             else:
                 self.logger.info(
@@ -179,42 +186,50 @@ class MLEJob(object):
         if self.resource_to_run in cluster_resources:
             if continuous:
                 self.logger.info(
-                    f"Job ID: {job_id} - Started monitoring - {self.config_filename}"
+                    f"Job ID: {job_id} - Started monitoring -"
+                    f" {self.config_filename}"
                 )
             status_out = self.monitor_cluster(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"Job ID: {job_id} - Cluster job completed - {self.config_filename}"
+                    f"Job ID: {job_id} - Cluster job completed -"
+                    f" {self.config_filename}"
                 )
         elif self.resource_to_run in cloud_resources:
             if continuous:
                 self.logger.info(
-                    f"VM Name: {job_id} - Started monitoring - {self.config_filename}"
+                    f"VM Name: {job_id} - Started monitoring -"
+                    f" {self.config_filename}"
                 )
             status_out = self.monitor_cloud(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"VM Name: {job_id} - Cloud job completed - {self.config_filename}"
+                    f"VM Name: {job_id} - Cloud job completed -"
+                    f" {self.config_filename}"
                 )
         elif self.resource_to_run == "ssh-node":
             if continuous:
                 self.logger.info(
-                    f"SSH PID: {job_id} - Started monitoring - {self.config_filename}"
+                    f"SSH PID: {job_id} - Started monitoring -"
+                    f" {self.config_filename}"
                 )
             status_out = self.monitor_ssh(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"SSH PID: {job_id} - SSH job completed - {self.config_filename}"
+                    f"SSH PID: {job_id} - SSH job completed -"
+                    f" {self.config_filename}"
                 )
         elif self.resource_to_run == "local":
             if continuous:
                 self.logger.info(
-                    f"PID: {job_id.pid} - Started monitoring - {self.config_filename}"
+                    f"PID: {job_id.pid} - Started monitoring -"
+                    f" {self.config_filename}"
                 )
             status_out = self.monitor_local(job_id, continuous)
             if status_out == 0:
                 self.logger.info(
-                    f"PID: {job_id.pid} - Local job completed - { self.config_filename}"
+                    f"PID: {job_id.pid} - Local job completed -"
+                    f" { self.config_filename}"
                 )
         return status_out
 
@@ -245,7 +260,9 @@ class MLEJob(object):
                     self.job_filename, self.cmd_line_args, self.debug_mode
                 )
         else:
-            proc = submit_local(self.job_filename, self.cmd_line_args, self.debug_mode)
+            proc = submit_local(
+                self.job_filename, self.cmd_line_args, self.debug_mode
+            )
         self.job_status = 1
         return proc
 
@@ -394,9 +411,14 @@ class MLEJob(object):
         # Delete VM instance and code directory stored in data bucket
         if self.resource_to_run == "gcp-cloud":
             clean_up_gcp(
-                job_id, self.job_arguments, self.experiment_dir, self.cloud_settings
+                job_id,
+                self.job_arguments,
+                self.experiment_dir,
+                self.cloud_settings,
             )
-            self.logger.info(f"VM Name: {job_id} - Delete VM - {self.config_filename}")
+            self.logger.info(
+                f"VM Name: {job_id} - Delete VM - {self.config_filename}"
+            )
 
         # If desired also delete configuration files
         if self.delete_config:

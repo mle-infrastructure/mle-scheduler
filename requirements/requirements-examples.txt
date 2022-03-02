@@ -1,7 +1,6 @@
-numpy
-dotmap
-rich
 google-cloud-storage
 paramiko
 sshtunnel
 scp
+mle-logging
+mle-hyperopt
