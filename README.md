@@ -20,8 +20,16 @@ For a quickstart check out the [notebook blog](https://github.com/mle-infrastruc
 
 ## Installation ⏳
 
+A PyPI installation is available via:
+
 ```
 pip install mle-scheduler
+```
+
+If you want to get the most recent commit, please install directly from the repository:
+
+```
+pip install git+https://github.com/mle-infrastructure/mle-hyperopt.git@main
 ```
 
 ## Managing a Single Job with `MLEJob` Locally 🚀
@@ -183,7 +191,7 @@ If you use `mle-scheduler` in your research, please cite it as follows:
 ```
 @software{mle_infrastructure2021github,
   author = {Robert Tjarko Lange},
-  title = {{MLE-Infrastructure}: A Set of Lightweight Tools for Distributed Machine Learning Experimentation},
+  title = {{MLE-Infrastructure}: A Set of Lightweight Tools for Distributed Machine Learning Experimentation},
   url = {http://github.com/mle-infrastructure},
   year = {2021},
 }
@@ -191,4 +199,4 @@ If you use `mle-scheduler` in your research, please cite it as follows:
 
 ## Development 👷
 
-You can run the test suite via `python -m pytest -vv tests/`. If you find a bug or are missing your favourite feature, feel free to create an issue and/or start [contributing](CONTRIBUTING.md) :hugs:.
+You can run the test suite via `python -m pytest -vv tests/`. If you find a bug or are missing your favourite feature, feel free to create an issue and/or start [contributing](CONTRIBUTING.md) 🤗.

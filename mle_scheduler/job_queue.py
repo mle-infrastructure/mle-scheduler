@@ -54,13 +54,17 @@ class MLEQueue(object):
         self.job_arguments = job_arguments.copy()  # job-specific args
         self.num_seeds = num_seeds  # number seeds to run
         self.max_running_jobs = max_running_jobs  # number of sim running jobs
-        self.delete_config = delete_config  # Option to delete config file after run
+        self.delete_config = (
+            delete_config  # Option to delete config file after run
+        )
         self.debug_mode = debug_mode  # Pipe stdout and stderr to files
 
         # Slack Clusterbot Configuration & Protocol DB
         self.use_slack_bot = use_slack_bot  # Boolean whether to use slack bot
         self.slack_message_id = slack_message_id  # Message ts id for slack bot
-        self.slack_user_name = slack_user_name  # Slack user name to send message to
+        self.slack_user_name = (
+            slack_user_name  # Slack user name to send message to
+        )
         self.slack_auth_token = slack_auth_token  # Slack Authentication Token
         self.protocol_db = protocol_db
 
@@ -71,7 +75,10 @@ class MLEQueue(object):
         # Instantiate/connect a logger
         FORMAT = "%(message)s"
         logging.basicConfig(
-            level=logger_level, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+            level=logger_level,
+            format=FORMAT,
+            datefmt="[%X]",
+            handlers=[RichHandler()],
         )
 
         self.logger = logging.getLogger(__name__)
@@ -106,7 +113,9 @@ class MLEQueue(object):
         # Extract extra_cmd_line_input from job_arguments
         if self.job_arguments is not None:
             if "extra_cmd_line_input" in self.job_arguments.keys():
-                self.extra_cmd_line_input = self.job_arguments["extra_cmd_line_input"]
+                self.extra_cmd_line_input = self.job_arguments[
+                    "extra_cmd_line_input"
+                ]
                 del self.job_arguments["extra_cmd_line_input"]
             else:
                 self.extra_cmd_line_input = None
@@ -146,6 +155,10 @@ class MLEQueue(object):
         self.num_running_jobs = 0  # No. of currently running jobs
         self.num_total_jobs = len(self.queue)
 
+        # If no limit of jobs is manually provided - schedule all of them
+        if self.max_running_jobs is None:
+            self.max_running_jobs = self.num_total_jobs
+
         self.logger.info(
             "Queued: {} - {} seeds x {} configs".format(
                 self.resource_to_run, self.num_seeds, len(self.config_filenames)
@@ -155,7 +168,9 @@ class MLEQueue(object):
     def run(self) -> None:
         """Schedule -> Monitor -> Merge individual logs."""
         # 1. Spawn 1st batch of evals until limit of allowed usage is reached
-        while self.num_running_jobs < min(self.max_running_jobs, self.num_total_jobs):
+        while self.num_running_jobs < min(
+            self.max_running_jobs, self.num_total_jobs
+        ):
             job, job_id = self.launch(self.queue_counter)
             self.queue[self.queue_counter]["status"] = 1
             self.queue[self.queue_counter]["job"] = job
@@ -207,11 +222,12 @@ class MLEQueue(object):
             )
             if self.slack_message_id is None:
                 self.slack_message_id = slackbot.send(
-                    f":rocket: Start running {self.num_total_jobs} jobs :rocket:\n"
-                    f"→ Compute resource: `{self.resource_to_run}`\n"
-                    f"→ Bash execution file: `{self.job_filename}`\n"
-                    f"→ Config .yaml: `{self.config_filenames}`\n"
-                    f"→ Seeds: `{self.random_seeds}`",
+                    f":rocket: Start running {self.num_total_jobs} jobs"
+                    " :rocket:\n→ Compute resource:"
+                    f" `{self.resource_to_run}`\n→ Bash execution file:"
+                    f" `{self.job_filename}`\n→ Config .yaml:"
+                    f" `{self.config_filenames}`\n→ Seeds:"
+                    f" `{self.random_seeds}`",
                     user_name=self.slack_user_name,
                 )
             slackbot.init_pbar(self.num_total_jobs, ts=self.slack_message_id)
@@ -231,7 +247,8 @@ class MLEQueue(object):
                             self.num_running_jobs -= 1
                             job["status"] = 0
                             # Clean up after job completion (e.g VM instance)
-                            job["job"].clean_up(job["job_id"])
+                            if not self.debug_mode:
+                                job["job"].clean_up(job["job_id"])
                             # Update the rich progress bar after job completed
                             progress.advance(task)
 
@@ -282,7 +299,8 @@ class MLEQueue(object):
                 if self.ssh_settings["clean_up_remote_dir"]:
                     delete_dir_ssh(self.ssh_settings)
                     self.logger.info(
-                        f"Deleted SSH directory - {self.ssh_settings['remote_dir']}"
+                        "Deleted SSH directory -"
+                        f" {self.ssh_settings['remote_dir']}"
                     )
 
         elif self.resource_to_run == "gcp-cloud":
@@ -298,7 +316,8 @@ class MLEQueue(object):
                 if self.cloud_settings["clean_up_remote_dir"]:
                     delete_dir_gcp(self.cloud_settings)
                     self.logger.info(
-                        f"Deleted cloud directory - {self.cloud_settings['remote_dir']}"
+                        "Deleted cloud directory -"
+                        f" {self.cloud_settings['remote_dir']}"
                     )
 
         # Merge configs and/or seeds of one eval/config if all jobs done!
@@ -308,7 +327,9 @@ class MLEQueue(object):
         elif self.automerge_seeds:
             for log_dir in self.mle_log_dirs:
                 self.merge_seeds(log_dir)
-            self.logger.info(f"Merged seeds for log directories - {self.mle_log_dirs}")
+            self.logger.info(
+                f"Merged seeds for log directories - {self.mle_log_dirs}"
+            )
 
     def launch(self, queue_counter):
         """Launch a set of jobs for one configuration - one for each seed."""
@@ -374,16 +395,15 @@ class MLEQueue(object):
                 f"{err}. You need to install `mle_logging` "
                 "to use the `merge_configs` method."
             )
-
         if merge_seeds:
             for log_dir in self.mle_log_dirs:
                 self.merge_seeds(log_dir)
-
         merge_config_logs(
             experiment_dir=self.experiment_dir, all_run_ids=self.mle_run_ids
         )
 
         if load:
             self.log = load_log(
-                os.path.join(self.experiment_dir, "meta_log.hdf5"), aggregate_seeds=True
+                os.path.join(self.experiment_dir, "meta_log.hdf5"),
+                aggregate_seeds=True,
             )

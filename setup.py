@@ -16,7 +16,9 @@ with open(os.path.join(CURRENT_DIR, "README.md"), encoding="utf-8") as f:
 def parse_requirements(path: str) -> List[str]:
     with open(os.path.join(CURRENT_DIR, path)) as f:
         return [
-            line.rstrip() for line in f if not (line.isspace() or line.startswith("#"))
+            line.rstrip()
+            for line in f
+            if not (line.isspace() or line.startswith("#"))
         ]
 
 
@@ -28,9 +30,7 @@ if mo:
     verstr = mo.group(1)
 else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
-git_tar = (
-    f"https://github.com/mle-infrastructure/mle-scheduler/archive/v{verstr}.tar.gz"
-)
+git_tar = f"https://github.com/mle-infrastructure/mle-scheduler/archive/v{verstr}.tar.gz"
 
 
 setup(
@@ -57,6 +57,17 @@ setup(
     zip_safe=False,
     platforms="any",
     python_requires=">=3.6",
-    install_requires=parse_requirements(os.path.join(CURRENT_DIR, "requirements.txt")),
-    tests_require=["mle-logging"],
+    install_requires=parse_requirements(
+        os.path.join(CURRENT_DIR, "requirements", "requirements.txt")
+    ),
+    tests_require=parse_requirements(
+        os.path.join(CURRENT_DIR, "requirements", "requirements-test.txt")
+    ),
+    extras_require={
+        "examples": parse_requirements(
+            os.path.join(
+                CURRENT_DIR, "requirements", "requirements-examples.txt"
+            )
+        )
+    },
 )

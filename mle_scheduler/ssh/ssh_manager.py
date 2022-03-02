@@ -1,15 +1,5 @@
 import logging
-import paramiko
-from scp import SCPClient
-from sshtunnel import SSHTunnelForwarder
 from typing import List
-
-
-logger = logging.getLogger("paramiko")
-logger.setLevel(logging.ERROR)
-logger = logging.getLogger("sshtunnel")
-logger.propagate = False
-logger.setLevel(logging.CRITICAL + 1)
 
 
 class SSH_Manager(object):
@@ -36,6 +26,16 @@ class SSH_Manager(object):
 
     def generate_tunnel(self):
         """Generate a tunnel through the jump host."""
+        try:
+            from sshtunnel import SSHTunnelForwarder
+
+            logger = logging.getLogger("sshtunnel")
+            logger.propagate = False
+            logger.setLevel(logging.CRITICAL + 1)
+        except ImportError:
+            raise ImportError(
+                "You need to install `sshtunnel` to use SSH forwarding."
+            )
         return SSHTunnelForwarder(
             (self.jump_server, self.port),
             ssh_username=self.user,
@@ -46,6 +46,16 @@ class SSH_Manager(object):
 
     def connect(self, tunnel):
         """Connect to the ssh client."""
+        try:
+            import paramiko
+
+            logger = logging.getLogger("paramiko")
+            logger.setLevel(logging.ERROR)
+        except ImportError:
+            raise ImportError(
+                "You need to install `paramiko` to use the SSH client."
+            )
+
         while True:
             try:
                 client = paramiko.SSHClient()
@@ -65,6 +75,14 @@ class SSH_Manager(object):
 
     def sync_dir(self, local_dir_name, remote_dir_name):
         """Clone/sync over a local directory to remote server."""
+        try:
+            from scp import SCPClient
+
+        except ImportError:
+            raise ImportError(
+                "You need to install `scp` to use the SCP client."
+            )
+
         with self.generate_tunnel() as tunnel:
             client = self.connect(tunnel)
             scp = SCPClient(client.get_transport())
@@ -114,6 +132,14 @@ class SSH_Manager(object):
 
     def get_file(self, remote_dir_name: str, local_dir_name: str):
         """scp clone a remote directory to the local machine."""
+        try:
+            from scp import SCPClient
+
+        except ImportError:
+            raise ImportError(
+                "You need to install `scp` to use the SCP client."
+            )
+
         with self.generate_tunnel() as tunnel:
             client = self.connect(tunnel)
             scp = SCPClient(client.get_transport())
