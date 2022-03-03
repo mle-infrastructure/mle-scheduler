@@ -68,6 +68,7 @@ setup(
             os.path.join(
                 CURRENT_DIR, "requirements", "requirements-examples.txt"
             )
-        )
+        ),
+        "full": ["google-cloud-storage", "paramiko", "sshtunnel", "scp"],
     },
 )

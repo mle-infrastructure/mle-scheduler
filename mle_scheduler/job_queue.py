@@ -153,7 +153,7 @@ class MLEQueue(object):
         self.queue_counter = 0  # Next job to schedule
         self.num_completed_jobs = 0  # No. already completed jobs
         self.num_running_jobs = 0  # No. of currently running jobs
-        self.num_total_jobs = len(self.queue)
+        self.num_total_jobs = len(self.queue)  # Queue is list of all jobs
 
         # If no limit of jobs is manually provided - schedule all of them
         if self.max_running_jobs is None:
@@ -168,6 +168,7 @@ class MLEQueue(object):
     def run(self) -> None:
         """Schedule -> Monitor -> Merge individual logs."""
         # 1. Spawn 1st batch of evals until limit of allowed usage is reached
+        print(self.max_running_jobs, self.num_total_jobs)
         while self.num_running_jobs < min(
             self.max_running_jobs, self.num_total_jobs
         ):
