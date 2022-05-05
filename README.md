@@ -11,7 +11,7 @@ Are you looking for a tool to manage your training runs locally, on [Slurm](http
 - **`MLEJob`**: Launches and monitors a single job on a resource (Slurm, Open Grid Engine, GCP, SSH, etc.).
 - **`MLEQueue`**: Launches and monitors a queue of jobs with different training configurations and/or seeds.
 
-For a quickstart check out the [notebook blog](https://github.com/mle-infrastructure/mle-hyperopt/blob/main/examples/getting_started.ipynb) or the example scripts 📖
+For a quickstart check out the [notebook blog](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/getting_started.ipynb) or the example scripts 📖
 
 | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mle-infrastructure/mle-scheduler/blob/main/examples/getting_started.ipynb)| [Local](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/run_local.py) | [Slurm](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/run_cluster.py) | [Grid Engine](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/run_cluster.py) | [SSH](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/run_ssh.py) | [GCP](https://github.com/mle-infrastructure/mle-scheduler/blob/main/examples/run_gcp.py) |
 |:----: |:----:|:----: | :----: | :----:| :----:|
@@ -29,7 +29,7 @@ pip install mle-scheduler
 If you want to get the most recent commit, please install directly from the repository:
 
 ```
-pip install git+https://github.com/mle-infrastructure/mle-hyperopt.git@main
+pip install git+https://github.com/mle-infrastructure/mle-scheduler.git@main
 ```
 
 ## Managing a Single Job with `MLEJob` Locally 🚀
