@@ -11,7 +11,10 @@ PYTHON_EXECUTABLE = (
 
 
 def submit_conda(
-    filename: str, cmd_line_arguments: str, job_arguments: dict, debug: bool = True
+    filename: str,
+    cmd_line_arguments: str,
+    job_arguments: dict,
+    debug: bool = True,
 ):
     """Create a local job & submit it based on provided file to execute."""
     f_name, f_extension = os.path.splitext(filename)
@@ -31,9 +34,11 @@ def submit_conda(
         current_env = os.environ["CONDA_PREFIX"]
         if current_env != env_name:
             # activate the correct conda environment
-            cmd = f"source $(conda info --base)/etc/profile.d/conda.sh \
-                    && conda activate {env_name} \
-                    && {cmd}"
+            cmd = (
+                "source $(conda info --base)/etc/profile.d/conda.sh           "
+                f"          && conda activate {env_name}                     &&"
+                f" {cmd}"
+            )
     except Exception:
         pass
     proc = submit_subprocess(cmd, debug)
@@ -41,13 +46,18 @@ def submit_conda(
 
 
 def submit_venv(
-    filename: str, cmd_line_arguments: str, job_arguments: dict, debug: bool = True
+    filename: str,
+    cmd_line_arguments: str,
+    job_arguments: dict,
+    debug: bool = True,
 ):
     """Create a local job & submit it based on provided file to execute."""
     cmd = f"{PYTHON_EXECUTABLE} {filename} {cmd_line_arguments}"
     env_name = job_arguments["env_name"]
     command_template = '/bin/bash -c "source {}/{}/bin/activate && {}"'
-    cmd = shlex.split(command_template.format(os.environ["WORKON_HOME"], env_name, cmd))
+    cmd = shlex.split(
+        command_template.format(os.environ["WORKON_HOME"], env_name, cmd)
+    )
     proc = submit_subprocess(cmd, debug)
     return proc
 
@@ -62,8 +72,8 @@ def submit_local(filename: str, cmd_line_arguments: str, debug: bool = True):
 def submit_subprocess(cmd: str, debug: bool = True) -> sp.Popen:
     """Submit a subprocess & return the process."""
     # Pipe stdout & stderr to separate files.
-    if debug:
-        cmd += " 2>>err.err 1>>log.txt"
+    # if debug:
+    #     cmd += " 2>>err.err 1>>log.txt"
     while True:
         try:
             proc = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)

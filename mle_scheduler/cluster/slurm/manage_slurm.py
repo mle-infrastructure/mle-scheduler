@@ -74,6 +74,7 @@ def submit_slurm(
             print(out, err)
             job_id = -1
         else:
+            # print(out.decode("utf-8").split())
             job_id = int(out.decode("utf-8").split()[-1])
             break
     # Wait until the job is listed under the qstat scheduled jobs
@@ -102,7 +103,8 @@ def monitor_slurm(job_id: Union[list, int], user_name: str) -> bool:
 
     job_info = out.split(b"\n")[1:]
     running_job_ids = [
-        int(job_info[i].decode("utf-8").split()[0]) for i in range(len(job_info) - 1)
+        int(job_info[i].decode("utf-8").split()[0])
+        for i in range(len(job_info) - 1)
     ]
     if type(job_id) == int:
         job_id = [job_id]

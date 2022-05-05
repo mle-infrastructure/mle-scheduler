@@ -111,7 +111,7 @@ job_args = {
 }
 
 queue = MLEQueue(
-    resource_to_run="slurm-cluster",
+    resource_to_run="sge-cluster",
     job_filename="train.py",
     job_arguments=job_args,
     config_filenames=["base_config_1.yaml",

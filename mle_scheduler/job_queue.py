@@ -168,7 +168,6 @@ class MLEQueue(object):
     def run(self) -> None:
         """Schedule -> Monitor -> Merge individual logs."""
         # 1. Spawn 1st batch of evals until limit of allowed usage is reached
-        print(self.max_running_jobs, self.num_total_jobs)
         while self.num_running_jobs < min(
             self.max_running_jobs, self.num_total_jobs
         ):
@@ -259,7 +258,10 @@ class MLEQueue(object):
                                 and self.slack_user_name is not None
                                 and self.slack_auth_token is not None
                             ):
-                                slackbot.update_pbar()
+                                try:
+                                    slackbot.update_pbar()
+                                except Exception:
+                                    pass
 
                             # Update the protocol db progress bar
                             if self.protocol_db is not None:
@@ -389,7 +391,7 @@ class MLEQueue(object):
     def merge_configs(self, merge_seeds: bool = False, load: bool = True):
         """Collect all config-specific logs into single meta_log.hdf5 file."""
         try:
-            from mle_logging import merge_config_logs, merge_seed_logs, load_log
+            from mle_logging import merge_config_logs, load_log
 
         except ModuleNotFoundError as err:
             raise ModuleNotFoundError(

@@ -30,7 +30,10 @@ def test_queue():
     queue = MLEQueue(
         resource_to_run="local",
         job_filename="examples/train.py",
-        config_filenames=["examples/base_config_1.yaml", "examples/base_config_2.yaml"],
+        config_filenames=[
+            "examples/base_config_1.yaml",
+            "examples/base_config_2.yaml",
+        ],
         num_seeds=2,
         random_seeds=[0, 1],
         experiment_dir="logs_queue",
@@ -57,12 +60,15 @@ def test_queue():
     return
 
 
-def test_automerge():
+def test_automerge_seeds():
     # Launch a queue of 4 jobs (2 configs x 2 seeds)
     queue = MLEQueue(
         resource_to_run="local",
         job_filename="examples/train.py",
-        config_filenames=["examples/base_config_1.yaml", "examples/base_config_2.yaml"],
+        config_filenames=[
+            "examples/base_config_1.yaml",
+            "examples/base_config_2.yaml",
+        ],
         num_seeds=2,
         random_seeds=[0, 1],
         experiment_dir="logs_merge",
@@ -72,7 +78,40 @@ def test_automerge():
     queue.run()
 
     # Check existence of expected files
-    assert os.path.exists(os.path.join("logs_merge", "base_config_1/logs/log.hdf5"))
-    assert os.path.exists(os.path.join("logs_merge", "base_config_2/logs/log.hdf5"))
+    assert os.path.exists(
+        os.path.join("logs_merge", "base_config_1/logs/log.hdf5")
+    )
+    assert os.path.exists(
+        os.path.join("logs_merge", "base_config_2/logs/log.hdf5")
+    )
+    shutil.rmtree("logs_merge")
+    return
+
+
+def test_automerge_configs():
+    # Launch a queue of 4 jobs (2 configs x 2 seeds)
+    queue = MLEQueue(
+        resource_to_run="local",
+        job_filename="examples/train.py",
+        config_filenames=[
+            "examples/base_config_1.yaml",
+            "examples/base_config_2.yaml",
+        ],
+        num_seeds=2,
+        random_seeds=[0, 1],
+        experiment_dir="logs_merge",
+        job_arguments={},
+        automerge_configs=True,
+    )
+    queue.run()
+
+    # Check existence of expected files
+    assert os.path.exists(os.path.join("logs_merge", "meta_log.hdf5"))
+    assert os.path.exists(
+        os.path.join("logs_merge", "base_config_1/logs/log.hdf5")
+    )
+    assert os.path.exists(
+        os.path.join("logs_merge", "base_config_2/logs/log.hdf5")
+    )
     shutil.rmtree("logs_merge")
     return

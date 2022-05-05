@@ -72,14 +72,19 @@ def submit_sge(
                 break
 
         # Get output & error messages (if there is an error)
-        out, err = proc.communicate()
-        if proc.returncode != 0:
-            print(out, err)
-            job_id = -1
-        else:
-            job_info = out.split(b"\n")
-            job_id = int(job_info[0].decode("utf-8").split()[0])
-            break
+        while True:
+            out, err = proc.communicate()
+            if proc.returncode != 0:
+                print(out, err)
+                job_id = -1
+            else:
+                try:
+                    job_info = out.split(b"\n")
+                    job_id = int(job_info[0].decode("utf-8").split()[0])
+                    break
+                except Exception:
+                    continue
+        break
 
     # Wait until the job is listed under the qstat scheduled jobs
     while True:
@@ -107,7 +112,8 @@ def monitor_sge(job_id: Union[list, int], user_name: str) -> bool:
 
     job_info = out.split(b"\n")[2:]
     running_job_ids = [
-        int(job_info[i].decode("utf-8").split()[0]) for i in range(len(job_info) - 1)
+        int(job_info[i].decode("utf-8").split()[0])
+        for i in range(len(job_info) - 1)
     ]
     if type(job_id) == int:
         job_id = [job_id]
