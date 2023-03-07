@@ -14,7 +14,10 @@ def slurm_generate_startup_file(job_arguments: dict) -> str:
     # Add desired number of requested gpus
     if "num_gpus" in job_arguments:
         if job_arguments["num_gpus"] > 0:
-            base_template += "#SBATCH --gres=gpu:{gpu_type}:{num_gpus}\n"
+            if job_arguments["gpu_type"] is not None:
+                base_template += "#SBATCH --gres=gpu:{gpu_type}:{num_gpus}\n"
+            else:
+                base_template += "#SBATCH --gres=gpu:{num_gpus}\n"
 
     # Set the max required memory per job
     if "memory_per_cpu" in job_arguments:
