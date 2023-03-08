@@ -1,3 +1,7 @@
+## [v0.0.6] - [03/2023]
+
+- Minor fixes in notebook
+
 ## [v0.0.5] - [01/05/2021]
 
 ### Added
