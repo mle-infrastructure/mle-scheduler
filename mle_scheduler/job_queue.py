@@ -72,6 +72,13 @@ class MLEQueue(object):
         self.cloud_settings = cloud_settings
         self.ssh_settings = ssh_settings
 
+        # Time between launching jobs
+        if "time_between_launch" in self.job_arguments.keys():
+            self.time_between_launches = self.job_arguments["time_between_launch"]
+            del self.job_arguments["time_between_launch"]
+        else:
+            self.time_between_launches = 0.1
+
         # Instantiate/connect a logger
         FORMAT = "%(message)s"
         logging.basicConfig(
@@ -177,7 +184,7 @@ class MLEQueue(object):
             self.queue[self.queue_counter]["job_id"] = job_id
             self.num_running_jobs += 1
             self.queue_counter += 1
-            time.sleep(0.1)
+            time.sleep(self.time_between_launches)
 
         self.logger.info(
             "Launched: {} - Set of {}/{} Jobs".format(
@@ -380,11 +387,10 @@ class MLEQueue(object):
 
         # Only merge logs if job is based on python job!
         # Otherwise .hdf5 file system is not used and there is nothing to merge
-        filename, file_extension = os.path.splitext(self.job_filename)
-        if file_extension == ".py":
-            merged_path = os.path.join(experiment_dir, "logs", "log.hdf5")
-            merge_seed_logs(merged_path, experiment_dir, self.num_seeds)
-
+        # filename, file_extension = os.path.splitext(self.job_filename)
+        # if file_extension == ".py":
+        merged_path = os.path.join(experiment_dir, "logs", "log.hdf5")
+        merge_seed_logs(merged_path, experiment_dir, self.num_seeds)
         if load:
             self.log = load_log(experiment_dir)
 

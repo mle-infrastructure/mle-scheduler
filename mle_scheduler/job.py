@@ -77,9 +77,7 @@ class MLEJob(object):
         self.job_arguments = job_arguments.copy()  # Job resource configuration
         self.experiment_dir = experiment_dir  # main results dir (create)
         self.seed_id = seed_id  # random seed to be passed as cmd-line arg
-        self.delete_config = (
-            delete_config  # Option to delete config file after run
-        )
+        self.delete_config = delete_config  # Option to delete config file after run
         self.debug_mode = debug_mode  # Pipe stdout and stderr to files
         self.user_name = getpass.getuser()
 
@@ -165,8 +163,7 @@ class MLEJob(object):
             job_id = self.schedule_ssh()
             if self.job_status == 1:
                 self.logger.info(
-                    f"PID: {job_id} - SSH job scheduled "
-                    f"- {self.config_filename}"
+                    f"PID: {job_id} - SSH job scheduled " f"- {self.config_filename}"
                 )
             else:
                 self.logger.info(
@@ -260,9 +257,7 @@ class MLEJob(object):
                     self.job_filename, self.cmd_line_args, self.debug_mode
                 )
         else:
-            proc = submit_local(
-                self.job_filename, self.cmd_line_args, self.debug_mode
-            )
+            proc = submit_local(self.job_filename, self.cmd_line_args, self.debug_mode)
         self.job_status = 1
         return proc
 
@@ -416,13 +411,14 @@ class MLEJob(object):
                 self.experiment_dir,
                 self.cloud_settings,
             )
-            self.logger.info(
-                f"VM Name: {job_id} - Delete VM - {self.config_filename}"
-            )
+            self.logger.info(f"VM Name: {job_id} - Delete VM - {self.config_filename}")
 
         # If desired also delete configuration files
         if self.delete_config:
-            os.remove(self.config_filename)
+            try:
+                os.remove(self.config_filename)
+            except Exception:
+                pass
 
     def generate_cmd_line_args(self) -> str:
         """Generate cmd line args for .py -> get_train_configs_ready"""
