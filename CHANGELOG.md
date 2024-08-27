@@ -1,3 +1,7 @@
+## [v0.0.7] - [08/2023]
+
+- Fix `module load` for Slurm
+
 ## [v0.0.6] - [03/2023]
 
 - Minor fixes in notebook

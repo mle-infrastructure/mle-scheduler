@@ -42,10 +42,10 @@ def slurm_generate_startup_file(job_arguments: dict) -> str:
 
     # Add optional modules to load (e.g. CUDA, etc.)
     if "modules_to_load" in job_arguments:
-        if type(job_arguments["modules_to_load"]) == str:
+        if isinstance(job_arguments["modules_to_load"], str):
             template_out += f"\nmodule load {job_arguments['modules_to_load']}"
-        elif type(job_arguments["modules_to_load"]) == list:
+        elif isinstance(job_arguments["modules_to_load"], list):
             for mod in job_arguments["modules_to_load"]:
-                template_out += f"\nmodule load {job_arguments['mod']}"
+                template_out += f"\nmodule load {mod}"
     template_out += slurm_job_exec
     return template_out
