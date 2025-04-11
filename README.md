@@ -29,7 +29,7 @@ pip install mle-scheduler
 If you want to get the most recent commit, please install directly from the repository:
 
 ```
-pip install git+https://github.com/mle-infrastructure/mle-hyperopt.git@main
+pip install git+https://github.com/mle-infrastructure/mle-scheduler.git@main
 ```
 
 ## Managing a Single Job with `MLEJob` Locally 🚀
